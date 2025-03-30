@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ username }}님의 QR 코드</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 30px;
+            width: 60%;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .expired {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        img {
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>{{ username }}님의 QR 코드</h1>
+
+    <div id="alert" class="alert"></div>
+
+    <img src="{{ url_for('static', filename='qr_codes/' + filename) }}" alt="QR코드">
+
+    <!-- ✅ 수정된 코드 -->
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+
+    <script>
+        const username = "{{ username }}";
+        const socket = io();
+
+        socket.on('qr_status', (data) => {
+            if (data.username !== username) return;
+
+            const alertBox = document.getElementById("alert");
+            alertBox.className = "alert"; // 초기화
+
+            if (data.status === "success") {
+                alertBox.classList.add("success");
+                alertBox.textContent = "✅ 인증 성공! 문이 열립니다.";
+            } else if (data.status === "fail") {
+                alertBox.classList.add("fail");
+                alertBox.textContent = "❌ 인증 실패: 등록되지 않은 QR입니다.";
+            } else if (data.status === "expired") {
+                alertBox.classList.add("expired");
+                alertBox.textContent = "⏰ 만료된 QR 코드입니다.";
+            }
+
+            alertBox.style.display = "block";
+
+            // 3초 후 알림 숨김
+            setTimeout(() => {
+                alertBox.style.display = "none";
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
