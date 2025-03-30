@@ -5,6 +5,9 @@ from datetime import datetime
 import sqlite3
 import os
 import secrets
+import threading
+import time
+import qrcode
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
@@ -12,6 +15,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 CORS(app)
 
 DB_PATH = 'users.db'
+qr_generation_users = {}
 
 # ------------------------- 로그인 기능 -------------------------
 @app.route('/login', methods=['GET', 'POST'])
@@ -22,45 +26,49 @@ def login():
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE name = ? AND password = ?", (username, password))
-        result = cursor.fetchone()
-        conn.close()
+        cursor.execute("SELECT id FROM users WHERE name = ? AND password = ?", (username, password))
+        user = cursor.fetchone()
 
-        if result:
-            session['user'] = username
-            return redirect(url_for('generate_qr'))
+        if user:
+            user_id = user[0]
+            cursor.execute("SELECT door_id FROM access_rights WHERE user_id = ?", (user_id,))
+            door = cursor.fetchone()
+            conn.close()
+
+            if door:
+                door_id = str(door[0])
+                session['user'] = username
+                qr_generation_users[username] = door_id
+                return redirect(url_for('show_qr', username=username))
+            else:
+                return "해당 사용자에게 연결된 도어락이 없습니다."
         else:
             return "로그인 실패"
 
     return render_template('login.html')
 
-# ------------------------- QR 생성 -------------------------
-@app.route('/generate_qr')
-def generate_qr():
-    username = session.get('user')
-    if not username:
-        return redirect(url_for('login'))
+# ------------------------- QR 생성 루프 -------------------------
+def generate_qr_loop():
+    while True:
+        for USERNAME, DOOR_ID in qr_generation_users.items():
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            qr_data = f"{USERNAME}_{DOOR_ID}_{timestamp}"
+            print("🔁 QR 자동 생성:", qr_data)
 
-    door_id = request.args.get('door', 'default')  # 도어락 ID 선택 방식 (기본값 있음)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M")
-    qr_data = f"{username}_{door_id}_{timestamp}"
+            filename = f"{USERNAME}_{DOOR_ID}.png"
+            filepath = os.path.join('static', 'qr_codes', filename)
 
-    import qrcode
-    filename = f"{username}_{door_id}.png"
-    filepath = os.path.join('static', 'qr_codes', filename)
+            img = qrcode.make(qr_data)
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            img.save(filepath)
 
-    img = qrcode.make(qr_data)
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    img.save(filepath)
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET qr_code = ? WHERE name = ?", (qr_data, USERNAME))
+            conn.commit()
+            conn.close()
 
-    # DB에 해당 사용자 QR 갱신
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET qr_code = ? WHERE name = ?", (qr_data, username))
-    conn.commit()
-    conn.close()
-
-    return render_template('qr.html', username=username, filename=filename)
+        time.sleep(30)  # 30초마다 갱신
 
 # ------------------------- QR 인증 -------------------------
 @app.route('/check_qr', methods=['POST'])
@@ -75,7 +83,6 @@ def check_qr():
         socketio.emit('qr_status', {'username': 'unknown', 'status': 'fail'})
         return jsonify({'status': 'fail'})
 
-    # 사용자 인증 + 도어락 권한 확인
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM users WHERE name = ?", (username,))
@@ -85,21 +92,24 @@ def check_qr():
         status = 'fail'
     else:
         user_id = user[0]
-        # 접근 권한 확인
-        cursor.execute("SELECT * FROM access_rights WHERE user_id = ? AND door_id = ?", (user_id, door_id))
-        access = cursor.fetchone()
+        cursor.execute("SELECT door_id FROM access_rights WHERE user_id = ?", (user_id,))
+        door = cursor.fetchone()
 
-        if not access:
+        if not door:
             status = 'fail'
         else:
-            # QR 유효성 체크
-            cursor.execute("SELECT qr_code FROM users WHERE id = ?", (user_id,))
-            result = cursor.fetchone()
-            current_qr = result[0] if result else None
-            if qr_data == current_qr:
-                status = 'success'
+            actual_door_id = str(door[0])
+
+            if door_id != actual_door_id:
+                status = 'fail'
             else:
-                status = 'expired'
+                cursor.execute("SELECT qr_code FROM users WHERE id = ?", (user_id,))
+                result = cursor.fetchone()
+                current_qr = result[0] if result else None
+                if qr_data == current_qr:
+                    status = 'success'
+                else:
+                    status = 'expired'
 
     conn.close()
     socketio.emit('qr_status', {'username': username, 'status': status})
@@ -113,7 +123,8 @@ def show_qr(username):
     if not filenames:
         return "QR 코드가 존재하지 않습니다.", 404
     filename = filenames[0]
-    return render_template('qr.html', username=username, filename=filename)
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    return render_template('qr.html', username=username, filename=filename, timestamp=timestamp)
 
 # ------------------------- 기본 라우트 -------------------------
 @app.route('/')
@@ -122,4 +133,5 @@ def index():
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
-    socketio.run(app, host="127.0.0.1", port=5000, debug=True)
+    threading.Thread(target=generate_qr_loop, daemon=True).start()
+    socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=False)
