@@ -39,6 +39,25 @@ def login():
                 door_id = str(door[0])
                 session['user'] = username
                 qr_generation_users[username] = door_id
+
+                # 로그인 즉시 QR 생성
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                qr_data = f"{username}_{door_id}_{timestamp}"
+                print("🆕 로그인 후 QR 생성:", qr_data)
+
+                filename = f"{username}_{door_id}.png"
+                filepath = os.path.join('static', 'qr_codes', filename)
+
+                img = qrcode.make(qr_data)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                img.save(filepath)
+
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
+                cursor.execute("UPDATE users SET qr_code = ? WHERE name = ?", (qr_data, username))
+                conn.commit()
+                conn.close()
+                
                 return redirect(url_for('show_qr', username=username))
             else:
                 return "해당 사용자에게 연결된 도어락이 없습니다."
