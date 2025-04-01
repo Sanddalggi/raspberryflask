@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
+from flask_bcrypt import Bcrypt
 from datetime import datetime
 import sqlite3
 import os
@@ -11,6 +12,8 @@ import qrcode
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
+
+bycrypt = Bcrypt(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 CORS(app)
 
