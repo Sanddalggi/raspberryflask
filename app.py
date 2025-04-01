@@ -13,7 +13,7 @@ import qrcode
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
-bycrypt = Bcrypt(app)
+bycrypt = Bcrypt(app) # Bycrypt 인스턴스화
 socketio = SocketIO(app, cors_allowed_origins="*")
 CORS(app)
 
