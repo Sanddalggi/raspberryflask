@@ -1,21 +1,30 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>로그인</title>
+    <meta charset="UTF-8">
+    <title>로그인</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-  <h2>QR 로그인</h2>
-  <form method="POST">
-    <label>아이디:</label>
-    <input type="text" name="username" required><br><br>
-
-    <label>비밀번호:</label>
-    <input type="password" name="password" required><br><br>
-
-    </select><br><br>
-
-    <button type="submit">로그인</button>
-  </form>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="card mx-auto shadow" style="max-width: 400px;">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">🔐Login</h3>
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="ID" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
