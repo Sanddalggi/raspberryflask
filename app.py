@@ -13,7 +13,7 @@ import qrcode
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
-bycrypt = Bcrypt(app) # Bycrypt 인스턴스화
+bcrypt = Bcrypt(app) # Bycrypt 인스턴스화
 socketio = SocketIO(app, cors_allowed_origins="*")
 CORS(app)
 
@@ -31,6 +31,9 @@ def login():
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM users WHERE name = ? AND password = ?", (username, password))
         user = cursor.fetchone()
+
+        if user and bcrypt.check_password_hash(user[1], password):
+            user_id = user[0]
 
         if user:
             user_id = user[0]
@@ -151,9 +154,9 @@ def show_qr(username):
 # ------------------------- 기본 라우트 -------------------------
 @app.route('/')
 def index():
-    return 'QR Server is running!'
+    return '기본 라우트의 실행 화면이니 화면이 허전해도 걱정하지마쇼'
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
     threading.Thread(target=generate_qr_loop, daemon=True).start()
-    socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=False)
+    socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=True) # 서버 리로딩 끄려면 use_reloader=False
