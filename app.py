@@ -159,4 +159,4 @@ def index():
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
     threading.Thread(target=generate_qr_loop, daemon=True).start()
-    socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=True) # 서버 리로딩 끄려면 use_reloader=False
+    socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=False)

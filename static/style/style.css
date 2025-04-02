@@ -1,0 +1,21 @@
+:root {
+    --main-color: #bc1142;
+}
+html, body{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f6f2 !important; /* !important는 bootstrap의 bg-light 설정을 덮기위함 */
+}
+.btn-primary {
+    background-color: var(--main-color);
+    border-color: var(--main-color);
+}
+.btn-primary:hover {
+    background-color: #a01038;
+    border-color: #a01038;
+}
+.form-control:focus {
+    border-color: var(--main-color);
+    box-shadow: 0 0 0 0.2rem rgba(188, 17, 66, 0.25);
+}
