@@ -23,9 +23,9 @@ qr_generation_users = {}
 def get_db_connection():
     return mysql.connector.connect(
         host='localhost',
-        user='your_mysql_user',
-        password='your_mysql_password',
-        database='your_database_name'
+        user='root',
+        password='',
+        database='doorlock_db'
     )
 
 # ------------------------- 기본 라우트 -------------------------
@@ -44,39 +44,13 @@ def login():
         cursor = conn.cursor()
         cursor.execute("SELECT id, password FROM users WHERE name = %s", (userid,))
         user = cursor.fetchone()
+        conn.close()
 
         if user:
             user_id, hashed_pw = user
             if bcrypt.check_password_hash(hashed_pw, password):
-                cursor.execute("SELECT door_id FROM access_rights WHERE user_id = %s", (user_id,))
-                door = cursor.fetchone()
-                conn.close()
-
-                if door:
-                    door_id = str(door[0])
-                    session['user'] = userid
-                    qr_generation_users[userid] = door_id
-
-                    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-                    qr_data = f"{userid}_{door_id}_{timestamp}"
-                    print("로그인 후 QR 생성:", qr_data)
-
-                    filename = f"{userid}_{door_id}.png"
-                    filepath = os.path.join('static', 'qr_codes', filename)
-
-                    img = qrcode.make(qr_data)
-                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-                    img.save(filepath)
-
-                    conn = get_db_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("UPDATE users SET qr_code = %s WHERE name = %s", (qr_data, userid))
-                    conn.commit()
-                    conn.close()
-
-                    return redirect(url_for('show_qr', username=userid))
-                else:
-                    return "해당 사용자에게 연결된 도어락이 없습니다."
+                session['user'] = str(userid)
+                return redirect(url_for('show_qr', username=userid))
             else:
                 return "아이디 또는 비밀번호가 올바르지 않습니다."
         else:
@@ -133,28 +107,33 @@ def palm_auth():
         return redirect(url_for('login'))
     return render_template('palm_auth.html')
 
-# ------------------------- QR 생성 루프 -------------------------
-def generate_qr_loop():
-    while True:
-        for USERNAME, DOOR_ID in qr_generation_users.items():
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            qr_data = f"{USERNAME}_{DOOR_ID}_{timestamp}"
-            print("QR 자동 생성:", qr_data)
+# ------------------------- QR 생성 -------------------------
+@app.route('/generate_qr', methods=['POST'])
+def generate_qr():
+    if 'user' not in session:
+        return redirect(url_for('login'))
 
-            filename = f"{USERNAME}_{DOOR_ID}.png"
-            filepath = os.path.join('static', 'qr_codes', filename)
+    userid = str(session['user'])
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    qr_data = f"{userid}_{timestamp}"
+    print("QR 코드 생성:", qr_data)
 
-            img = qrcode.make(qr_data)
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            img.save(filepath)
+    filename = f"{userid}.png"
+    filepath = os.path.join('static', 'qr_codes', filename)
 
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("UPDATE users SET qr_code = %s WHERE name = %s", (qr_data, USERNAME))
-            conn.commit()
-            conn.close()
+    img = qrcode.make(qr_data)
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    img.save(filepath)
 
-        time.sleep(30)
+    # DB에 저장
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET qr_code = %s WHERE name = %s", (qr_data, userid))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('show_qr', username=userid))
+
 
 # ------------------------- QR 인증 -------------------------
 @app.route('/check_qr', methods=['POST'])
@@ -163,7 +142,7 @@ def check_qr():
     qr_data = data.get('qr_data', '')
 
     try:
-        username, door_id, timestamp = qr_data.split('_')
+        username, timestamp = qr_data.split('_')
     except Exception as e:
         print(f"QR 파싱 오류: {e}")
         socketio.emit('qr_status', {'username': 'unknown', 'status': 'fail'})
@@ -178,28 +157,19 @@ def check_qr():
         status = 'fail'
     else:
         user_id = user[0]
-        cursor.execute("SELECT door_id FROM access_rights WHERE user_id = %s", (user_id,))
-        door = cursor.fetchone()
+        cursor.execute("SELECT qr_code FROM users WHERE id = %s", (user_id,))
+        result = cursor.fetchone()
+        current_qr = result[0] if result else None
 
-        if not door:
-            status = 'fail'
+        if qr_data == current_qr:
+            status = 'success'
         else:
-            actual_door_id = str(door[0])
-
-            if door_id != actual_door_id:
-                status = 'fail'
-            else:
-                cursor.execute("SELECT qr_code FROM users WHERE id = %s", (user_id,))
-                result = cursor.fetchone()
-                current_qr = result[0] if result else None
-                if qr_data == current_qr:
-                    status = 'success'
-                else:
-                    status = 'expired'
+            status = 'expired'
 
     conn.close()
     socketio.emit('qr_status', {'username': username, 'status': status})
     return jsonify({'status': status})
+
 
 # ------------------------- QR 화면 -------------------------
 @app.route('/qr/<username>')
@@ -214,5 +184,4 @@ def show_qr(username):
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
-    threading.Thread(target=generate_qr_loop, daemon=True).start()
     socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=False)
