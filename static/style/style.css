@@ -5,7 +5,7 @@ html, body{
     height: 100%;
     margin: 0;
     padding: 0;
-    background-color: #f8f6f2 !important; /* !important는 bootstrap의 bg-light 설정을 덮기위함 */
+    background-color: #FFFFFF !important; /* !important는 bootstrap의 bg-light 설정을 덮기위함 */
 }
 .btn-primary {
     background-color: var(--main-color);

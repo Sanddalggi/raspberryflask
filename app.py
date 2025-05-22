@@ -82,14 +82,17 @@ def login():
 def register():
     if request.method == 'POST':
         username = request.form['username']
+        userid = request.form['userid']
         password = request.form['password']
+        phone = request.form['phone']
+        email = request.form.get('email', '') # 이메일은 선택사항이므로 입력이 없을 시  '' 반환
 
         # DB 연결
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # 사용자 중복 확인
-        cursor.execute("SELECT id FROM users WHERE name = ?", (username,))
+        cursor.execute("SELECT id FROM users WHERE name = ?", (userid,))
         existing_user = cursor.fetchone()
 
         if existing_user:
@@ -98,7 +101,7 @@ def register():
 
         # 비밀번호 해시 처리
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-        cursor.execute("INSERT INTO users (name, password) VALUES (?, ?)", (username, hashed_pw))
+        cursor.execute("INSERT INTO users (name, password) VALUES (?, ?)", (userid, hashed_pw))
         conn.commit()
         conn.close()
 
@@ -144,7 +147,7 @@ def check_qr():
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM users WHERE name = ?", (username,))
+    cursor.execute("SELECT id FROM users WHERE name = ?", (userid,))
     user = cursor.fetchone()
 
     if not user:
