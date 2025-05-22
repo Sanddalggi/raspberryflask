@@ -3,7 +3,7 @@ from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from datetime import datetime
-import sqlite3
+import mysql.connector
 import os
 import secrets
 import threading
@@ -13,12 +13,20 @@ import qrcode
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
-bcrypt = Bcrypt(app) # Bycrypt 인스턴스화
+bcrypt = Bcrypt(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 CORS(app)
 
-DB_PATH = 'users.db'
 qr_generation_users = {}
+
+# ------------------------- DB 연결 함수 -------------------------
+def get_db_connection():
+    return mysql.connector.connect(
+        host='localhost',
+        user='your_mysql_user',
+        password='your_mysql_password',
+        database='your_database_name'
+    )
 
 # ------------------------- 기본 라우트 -------------------------
 @app.route('/')
@@ -29,51 +37,50 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        userid = request.form['userid']
         password = request.form['password']
 
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, password FROM users WHERE name = ?", (username,))
+        cursor.execute("SELECT id, password FROM users WHERE name = %s", (userid,))
         user = cursor.fetchone()
 
         if user:
             user_id, hashed_pw = user
             if bcrypt.check_password_hash(hashed_pw, password):
-                cursor.execute("SELECT door_id FROM access_rights WHERE user_id = ?", (user_id,))
+                cursor.execute("SELECT door_id FROM access_rights WHERE user_id = %s", (user_id,))
                 door = cursor.fetchone()
                 conn.close()
 
                 if door:
                     door_id = str(door[0])
-                    session['user'] = username
-                    qr_generation_users[username] = door_id
+                    session['user'] = userid
+                    qr_generation_users[userid] = door_id
 
-                    # QR 생성
                     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-                    qr_data = f"{username}_{door_id}_{timestamp}"
+                    qr_data = f"{userid}_{door_id}_{timestamp}"
                     print("로그인 후 QR 생성:", qr_data)
 
-                    filename = f"{username}_{door_id}.png"
+                    filename = f"{userid}_{door_id}.png"
                     filepath = os.path.join('static', 'qr_codes', filename)
 
                     img = qrcode.make(qr_data)
                     os.makedirs(os.path.dirname(filepath), exist_ok=True)
                     img.save(filepath)
 
-                    conn = sqlite3.connect(DB_PATH)
+                    conn = get_db_connection()
                     cursor = conn.cursor()
-                    cursor.execute("UPDATE users SET qr_code = ? WHERE name = ?", (qr_data, username))
+                    cursor.execute("UPDATE users SET qr_code = %s WHERE name = %s", (qr_data, userid))
                     conn.commit()
                     conn.close()
 
-                    return redirect(url_for('show_qr', username=username))
+                    return redirect(url_for('show_qr', username=userid))
                 else:
                     return "해당 사용자에게 연결된 도어락이 없습니다."
             else:
-                return "비밀번호가 일치하지 않습니다."
+                return "아이디 또는 비밀번호가 올바르지 않습니다."
         else:
-            return "존재하지 않는 사용자입니다."
+            return "아이디 또는 비밀번호가 올바르지 않습니다."
 
     return render_template('login.html')
 
@@ -85,29 +92,46 @@ def register():
         userid = request.form['userid']
         password = request.form['password']
         phone = request.form['phone']
-        email = request.form.get('email', '') # 이메일은 선택사항이므로 입력이 없을 시  '' 반환
+        email = request.form.get('email', '')
 
-        # DB 연결
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
         cursor = conn.cursor()
 
-        # 사용자 중복 확인
-        cursor.execute("SELECT id FROM users WHERE name = ?", (userid,))
+        cursor.execute("SELECT id FROM users WHERE name = %s", (userid,))
         existing_user = cursor.fetchone()
 
         if existing_user:
             conn.close()
             return "이미 존재하는 사용자입니다."
 
-        # 비밀번호 해시 처리
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-        cursor.execute("INSERT INTO users (name, password) VALUES (?, ?)", (userid, hashed_pw))
+        cursor.execute("INSERT INTO users (name, password, phone, email, realname) VALUES (%s, %s, %s, %s, %s)",
+                       (userid, hashed_pw, phone, email, username))
         conn.commit()
         conn.close()
 
         return redirect(url_for('login'))
 
     return render_template('register.html')
+
+# ------------------------- 인증 방식 선택 -------------------------
+@app.route('/select_auth', methods=["GET"])
+def select_auth_method():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    return render_template("select_auth.html")
+
+@app.route('/face_auth')
+def face_auth():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template('face_auth.html')
+
+@app.route('/palm_auth')
+def palm_auth():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template('palm_auth.html')
 
 # ------------------------- QR 생성 루프 -------------------------
 def generate_qr_loop():
@@ -124,13 +148,13 @@ def generate_qr_loop():
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             img.save(filepath)
 
-            conn = sqlite3.connect(DB_PATH)
+            conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET qr_code = ? WHERE name = ?", (qr_data, USERNAME))
+            cursor.execute("UPDATE users SET qr_code = %s WHERE name = %s", (qr_data, USERNAME))
             conn.commit()
             conn.close()
 
-        time.sleep(30)  # 30초마다 갱신
+        time.sleep(30)
 
 # ------------------------- QR 인증 -------------------------
 @app.route('/check_qr', methods=['POST'])
@@ -145,16 +169,16 @@ def check_qr():
         socketio.emit('qr_status', {'username': 'unknown', 'status': 'fail'})
         return jsonify({'status': 'fail'})
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM users WHERE name = ?", (userid,))
+    cursor.execute("SELECT id FROM users WHERE name = %s", (username,))
     user = cursor.fetchone()
 
     if not user:
         status = 'fail'
     else:
         user_id = user[0]
-        cursor.execute("SELECT door_id FROM access_rights WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT door_id FROM access_rights WHERE user_id = %s", (user_id,))
         door = cursor.fetchone()
 
         if not door:
@@ -165,7 +189,7 @@ def check_qr():
             if door_id != actual_door_id:
                 status = 'fail'
             else:
-                cursor.execute("SELECT qr_code FROM users WHERE id = ?", (user_id,))
+                cursor.execute("SELECT qr_code FROM users WHERE id = %s", (user_id,))
                 result = cursor.fetchone()
                 current_qr = result[0] if result else None
                 if qr_data == current_qr:
