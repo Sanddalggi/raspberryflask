@@ -74,7 +74,7 @@ def login():
                     conn.commit()
                     conn.close()
 
-                    return redirect(url_for('show_qr', username=userid))
+                    return redirect(url_for('main'))
                 else:
                     return "해당 사용자에게 연결된 도어락이 없습니다."
             else:
@@ -116,7 +116,7 @@ def register():
 
 # ------------------------- 인증 방식 선택 -------------------------
 @app.route('/select_auth', methods=["GET"])
-def select_auth_method():
+def select_auth():
     if "user" not in session:
         return redirect(url_for("login"))
     return render_template("select_auth.html")
@@ -132,6 +132,21 @@ def palm_auth():
     if 'user' not in session:
         return redirect(url_for('login'))
     return render_template('palm_auth.html')
+
+# ------------------------- Main -------------------------
+@app.route('/main')
+def main():
+    if "user" not in session:
+        return redirect(url_for('login'))
+
+    userid = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT name AS userid, realname, phone, email FROM users WHERE name = %s", (userid,))
+    user = cursor.fetchone()
+    conn.close()
+
+    return render_template('main.html', user=user)
 
 # ------------------------- QR 생성 루프 -------------------------
 def generate_qr_loop():
@@ -211,6 +226,29 @@ def show_qr(username):
     filename = filenames[0]
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     return render_template('qr.html', username=username, filename=filename, timestamp=timestamp)
+
+# ------------------------- 로그 -------------------------
+@app.route('/logs')
+def logs():
+    if "user" not in session:
+        return redirect(url_for('login'))
+
+    userid = session['user']
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT id FROM users WHERE name = %s", (userid,))
+    user = cursor.fetchone()
+    if not user:
+        return "사용자 정보를 찾을 수 없습니다."
+
+    user_id = user["id"]
+    cursor.execute("SELECT event_type, timestamp FROM logs WHERE user_id = %s ORDER BY timestamp DESC", (user_id,))
+    log_entries = cursor.fetchall()
+
+    conn.close()
+    return render_template('logs.html', logs=log_entries)
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
