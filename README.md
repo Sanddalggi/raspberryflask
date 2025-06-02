@@ -25,4 +25,4 @@ source bin/activate(윈도우는 명령어 다름) 입력하면 가상환경 실
 python 인터프리터가 반드시 venv로 설정이 되어있어야 라이브러리가 정상적으로 import 가능.
 Good luck.
 
-34.64.187.181
+외부 IP : 34.64.187.181
