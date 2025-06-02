@@ -23,9 +23,9 @@ qr_generation_users = {}
 def get_db_connection():
     return mysql.connector.connect(
         host='localhost',
-        user='your_mysql_user',
-        password='your_mysql_password',
-        database='your_database_name'
+        user='uncledrew',
+        password='',
+        database='doorlock_db'
     )
 
 # ------------------------- 기본 라우트 -------------------------
@@ -105,8 +105,8 @@ def register():
             return "이미 존재하는 사용자입니다."
 
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-        cursor.execute("INSERT INTO users (name, password, phone, email, realname) VALUES (%s, %s, %s, %s, %s)",
-                       (userid, hashed_pw, phone, email, username))
+        cursor.execute("INSERT INTO users (name, userid, password, phone, email) VALUES (%s, %s, %s, %s, %s)",
+               (username, userid, hashed_pw, phone, email))
         conn.commit()
         conn.close()
 
