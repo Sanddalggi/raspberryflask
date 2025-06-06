@@ -33,6 +33,12 @@ def get_db_connection():
 def index():
     return '기본 라우트의 실행 화면이니 화면이 허전해도 걱정하지마쇼'
 
+# ------------------------- 메인 페이지 -------------------------
+
+@app.route('/main')
+def main():
+
+    return render_template('main.html')
 # ------------------------- 로그인 -------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -50,6 +56,7 @@ def login():
             user_id, hashed_pw = user
             if bcrypt.check_password_hash(hashed_pw, password):
                 session['user'] = str(userid)
+                generate_qr()
                 return redirect(url_for('show_qr', username=userid))
             else:
                 return "아이디 또는 비밀번호가 올바르지 않습니다."
