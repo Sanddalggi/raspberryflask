@@ -42,7 +42,7 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, password FROM users WHERE name = %s", (userid,))
+        cursor.execute("SELECT id, password FROM users WHERE userid = %s", (userid,))
         user = cursor.fetchone()
 
         if user:
@@ -70,7 +70,7 @@ def login():
 
                     conn = get_db_connection()
                     cursor = conn.cursor()
-                    cursor.execute("UPDATE users SET qr_code = %s WHERE name = %s", (qr_data, userid))
+                    cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
                     conn.commit()
                     conn.close()
 
@@ -97,7 +97,7 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT id FROM users WHERE name = %s", (userid,))
+        cursor.execute("SELECT id FROM users WHERE userid = %s", (userid,))
         existing_user = cursor.fetchone()
 
         if existing_user:
@@ -105,7 +105,8 @@ def register():
             return "이미 존재하는 사용자입니다."
 
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-        cursor.execute("INSERT INTO users (name, userid, password, phone, email) VALUES (%s, %s, %s, %s, %s)",
+
+        cursor.execute("INSERT INTO users (username, userid, password, phone, email) VALUES (%s, %s, %s, %s, %s)",
                (username, userid, hashed_pw, phone, email))
         conn.commit()
         conn.close()
@@ -142,7 +143,7 @@ def main():
     userid = session['user']
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT name AS userid, realname, phone, email FROM users WHERE name = %s", (userid,))
+    cursor.execute("SELECT username, phone, email FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
     conn.close()
 
@@ -165,7 +166,7 @@ def generate_qr_loop():
 
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET qr_code = %s WHERE name = %s", (qr_data, USERNAME))
+            cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, USERNAME))
             conn.commit()
             conn.close()
 
@@ -186,14 +187,14 @@ def check_qr():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM users WHERE name = %s", (username,))
+    cursor.execute("SELECT id FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
 
     if not user:
         status = 'fail'
     else:
         user_id = user[0]
-        cursor.execute("SELECT door_id FROM access_rights WHERE user_id = %s", (user_id,))
+        cursor.execute("SELECT door_id FROM access_rights WHERE userid = %s", (userid,))
         door = cursor.fetchone()
 
         if not door:
@@ -204,7 +205,7 @@ def check_qr():
             if door_id != actual_door_id:
                 status = 'fail'
             else:
-                cursor.execute("SELECT qr_code FROM users WHERE id = %s", (user_id,))
+                cursor.execute("SELECT qr_code FROM users WHERE userid = %s", (userid,))
                 result = cursor.fetchone()
                 current_qr = result[0] if result else None
                 if qr_data == current_qr:
@@ -238,13 +239,13 @@ def logs():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT id FROM users WHERE name = %s", (userid,))
+    cursor.execute("SELECT id FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
     if not user:
         return "사용자 정보를 찾을 수 없습니다."
 
     user_id = user["id"]
-    cursor.execute("SELECT event_type, timestamp FROM logs WHERE user_id = %s ORDER BY timestamp DESC", (user_id,))
+    cursor.execute("SELECT event_type, timestamp FROM logs WHERE userid = %s ORDER BY timestamp DESC", (userid,))
     log_entries = cursor.fetchall()
 
     conn.close()
