@@ -95,6 +95,15 @@
         <div class="progress-fill" id="progressFill"></div>
     </div>
 
+    <div style="margin-top: 20px;">
+    <a href="{{ url_for('main') }}">
+        <button style="padding: 10px 20px; font-weight: bold; border: none; border-radius: 5px; background-color: #28a745; color: white; cursor: pointer;">
+            🏠 나가기
+        </button>
+    </a>
+    </div>
+
+
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <script>
         const username = "{{ username }}";
