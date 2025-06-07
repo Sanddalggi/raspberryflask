@@ -172,8 +172,7 @@ def generate_qr_loop():
 # ------------------------- QR 인증 -------------------------
 @app.route('/check_qr', methods=['POST'])
 def check_qr():
-    data = request.get_json()
-    qr_data = data.get('qr_data', '')
+    qr_data = request.form.get('qr_data', '')
 
     try:
         username, door_id, timestamp = qr_data.split('_')
