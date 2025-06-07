@@ -352,6 +352,13 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+@app.route("/test_emit")
+def test_emit():
+    socketio.emit("qr_status", {"username": "jm1234", "status": "success"})
+    return "Emit sent!"
+
+
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
     socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+
