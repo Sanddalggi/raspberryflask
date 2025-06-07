@@ -140,11 +140,11 @@ def main():
     userid = session['user']
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT username, phone, email FROM users WHERE userid = %s", (userid,))
+    cursor.execute("SELECT username, userid, doorid, phone, email FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
     conn.close()
 
-    return render_template('main.html', user=user)
+    return render_template('main.html', user=user, username=user['username'])
 
 # ------------------------- QR 생성 루프 -------------------------
 def generate_qr_loop():
@@ -172,8 +172,7 @@ def generate_qr_loop():
 # ------------------------- QR 인증 -------------------------
 @app.route('/check_qr', methods=['POST'])
 def check_qr():
-    data = request.get_json()
-    qr_data = data.get('qr_data', '')
+    qr_data = request.form.get('qr_data', '')
 
     try:
         username, door_id, timestamp = qr_data.split('_')
@@ -204,16 +203,52 @@ def check_qr():
     return jsonify({'status': status})
 
 # ------------------------- QR 화면 -------------------------
-@app.route('/qr/<username>')
-def show_qr(username):
-    qr_dir = os.path.join('static', 'qr_codes')
-    filenames = [f for f in os.listdir(qr_dir) if f.startswith(username)]
-    if not filenames:
-        return "QR 코드가 존재하지 않습니다.", 404
-    filename = filenames[0]
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    return render_template('qr.html', username=username, filename=filename, timestamp=timestamp)
 
+@app.route('/qr/<userid>')
+def show_qr(userid):
+    qr_dir = os.path.join('static', 'qr_codes')
+
+    if not os.path.exists(qr_dir):
+        return "QR 코드 디렉토리가 없습니다.", 500
+
+    # userid로 시작하는 파일 찾기
+    matched_files = [
+        f for f in os.listdir(qr_dir)
+        if f.startswith(f"{userid}_") and f.endswith('.png')
+    ]
+
+    if not matched_files:
+        return "QR 코드가 존재하지 않습니다.", 404
+
+    filename = matched_files[0]
+
+    # 도어ID와 timestamp 파싱
+    try:
+        base = filename.replace('.png', '')
+        _, doorid, timestamp = base.split('_')
+    except:
+        doorid = '알 수 없음'
+        timestamp = '알 수 없음'
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT username FROM users WHERE userid = %s", (userid,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        username = result[0]
+    else:
+        username = userid  # fallback
+
+    return render_template(
+        'qr.html',
+        username=username,
+        userid=userid,
+        doorid=doorid,
+        timestamp=timestamp,
+        filename=filename
+    )
 # ------------------------- 로그 -------------------------
 @app.route('/logs')
 def logs():
