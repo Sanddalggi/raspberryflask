@@ -21,73 +21,101 @@
             display: none;
         }
 
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .fail { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .expired { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .expired {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
 
         img {
             width: 300px;
             border: 1px solid #ccc;
             border-radius: 10px;
             padding: 10px;
-            margin-bottom: 20px;
-        }
-
-        .progress-container {
-            width: 300px;
-            height: 20px;
-            background-color: #f3f3f3;
-            border-radius: 10px;
-            margin: 0 auto 20px;
-            overflow: hidden;
         }
 
         .progress-bar {
+            width: 300px;
+            height: 10px;
+            margin: 20px auto;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
             height: 100%;
             width: 100%;
-            background-color: #4caf50;
+            background-color: #007bff;
             transition: width 1s linear;
         }
 
-        #refresh-btn {
+        button {
+            margin-top: 10px;
             padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
+            font-weight: bold;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
         }
 
-        #refresh-btn:hover {
-            background-color: #0056b3;
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        button.enabled {
+            background-color: #007bff;
+            color: white;
         }
     </style>
 </head>
 <body>
 
     <h1>{{ username }}님의 QR 코드</h1>
+
     <div id="alert" class="alert"></div>
 
-    <img id="qr-img" src="{{ url_for('static', filename='qr_codes/' + filename) }}" alt="QR코드">
+    <img id="qrImage" src="{{ url_for('static', filename='qr_codes/' + filename) }}" alt="QR코드">
 
-    <div class="progress-container">
-        <div class="progress-bar" id="progress-bar"></div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
     </div>
 
-    <button id="refresh-btn">QR 갱신</button>
+    <button id="refreshBtn" disabled>🔄 QR 갱신</button>
 
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <script>
         const username = "{{ username }}";
         const userid = "{{ userid }}";
+        const createdTime = new Date("{{ timestamp[:4] }}-{{ timestamp[4:6] }}-{{ timestamp[6:8] }}T{{ timestamp[8:10] }}:{{ timestamp[10:12] }}:{{ timestamp[12:14] }}");
+
+        const alertBox = document.getElementById("alert");
+        const refreshBtn = document.getElementById("refreshBtn");
+        const qrImage = document.getElementById("qrImage");
+        const progressFill = document.getElementById("progressFill");
+
+        const TOTAL_SECONDS = 30;
+        let secondsLeft = TOTAL_SECONDS;
+
         const socket = io();
 
         socket.on('qr_status', (data) => {
             if (data.username !== username) return;
 
-            const alertBox = document.getElementById("alert");
-            alertBox.className = "alert";
-
+            alertBox.className = "alert"; // 초기화
             if (data.status === "success") {
                 alertBox.classList.add("success");
                 alertBox.textContent = "✅ 인증 성공! 문이 열립니다.";
@@ -103,40 +131,39 @@
             setTimeout(() => alertBox.style.display = "none", 3000);
         });
 
-        const refreshBtn = document.getElementById("refresh-btn");
-        const qrImg = document.getElementById("qr-img");
-        const progressBar = document.getElementById("progress-bar");
+        function updateProgress() {
+            secondsLeft--;
+            const percent = (secondsLeft / TOTAL_SECONDS) * 100;
+            progressFill.style.width = percent + "%";
 
-        let timer = null;
-
-        function startProgressBar() {
-            let timeLeft = 30;
-            progressBar.style.width = "100%";
-
-            clearInterval(timer);
-            timer = setInterval(() => {
-                timeLeft--;
-                progressBar.style.width = `${(timeLeft / 30) * 100}%`;
-                if (timeLeft <= 0) clearInterval(timer);
-            }, 1000);
+            if (secondsLeft <= 0) {
+                refreshBtn.disabled = false;
+                refreshBtn.classList.add("enabled");
+                clearInterval(timer);
+            }
         }
 
-        function generateQR() {
-            fetch(`/generate_qr?userid=${userid}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === "ok") {
-                        qrImg.src = `/static/qr_codes/${data.filename}?t=${Date.now()}`;
-                        startProgressBar();
-                    } else {
-                        alert("QR 생성 실패");
-                    }
-                });
-        }
+        const timer = setInterval(updateProgress, 1000);
 
-        // 초기 로드 시 QR 생성
-        window.onload = generateQR;
-        refreshBtn.onclick = generateQR;
+        refreshBtn.addEventListener("click", async () => {
+            refreshBtn.disabled = true;
+            refreshBtn.classList.remove("enabled");
+
+            const res = await fetch(`/generate_qr?userid=${userid}`);
+            const data = await res.json();
+
+            if (data.status === 'ok') {
+                const now = new Date();
+                const newSrc = `/static/qr_codes/${data.filename}?t=${now.getTime()}`;
+                qrImage.src = newSrc;
+
+                secondsLeft = TOTAL_SECONDS;
+                progressFill.style.width = "100%";
+                setInterval(updateProgress, 1000);
+            } else {
+                alert("QR 갱신 실패: " + data.reason);
+            }
+        });
     </script>
 </body>
 </html>
