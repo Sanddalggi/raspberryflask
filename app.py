@@ -42,27 +42,43 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, password, doorid FROM users WHERE userid = %s", (userid,))
+        cursor.execute("SELECT id, username, password, doorid FROM users WHERE userid = %s", (userid,))
         user = cursor.fetchone()
 
         if user:
-            user_id, hashed_pw, door_id = user
+            user_id, username, hashed_pw, door_id = user
             if bcrypt.check_password_hash(hashed_pw, password):
                 if door_id:
+                    # ✅ 세션 등록
                     session['user'] = userid
+
+                    # ✅ QR 자동 생성 대상에 등록
                     qr_generation_users[userid] = door_id
 
+                    # ✅ QR 코드 생성
                     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                     qr_data = f"{userid}_{door_id}_{timestamp}"
                     print("로그인 후 QR 생성:", qr_data)
 
-                    filename = f"{userid}_{door_id}.png"
-                    filepath = os.path.join('static', 'qr_codes', filename)
+                    qr_dir = os.path.join('static', 'qr_codes')
+                    os.makedirs(qr_dir, exist_ok=True)
 
+                    # ✅ 기존 QR 파일 삭제
+                    for f in os.listdir(qr_dir):
+                        if f.startswith(f"{userid}_") and f.endswith('.png'):
+                            try:
+                                os.remove(os.path.join(qr_dir, f))
+                                print(f"이전 QR 파일 삭제: {f}")
+                            except Exception as e:
+                                print(f"QR 삭제 오류: {e}")
+
+                    # ✅ 새 QR 저장
+                    filename = f"{userid}_{door_id}_{timestamp}.png"
+                    filepath = os.path.join(qr_dir, filename)
                     img = qrcode.make(qr_data)
-                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
                     img.save(filepath)
 
+                    # ✅ DB에 저장
                     cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
                     conn.commit()
                     conn.close()
@@ -149,21 +165,35 @@ def main():
 # ------------------------- QR 생성 루프 -------------------------
 def generate_qr_loop():
     while True:
-        for USERNAME, DOOR_ID in qr_generation_users.items():
+        for userid, door_id in qr_generation_users.items():
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            qr_data = f"{USERNAME}_{DOOR_ID}_{timestamp}"
-            print("QR 자동 생성:", qr_data)
+            qr_data = f"{userid}_{door_id}_{timestamp}"
+            print(f"[QR 재생성] {qr_data}")
 
-            filename = f"{USERNAME}_{DOOR_ID}.png"
-            filepath = os.path.join('static', 'qr_codes', filename)
+            # 파일 저장 경로
+            qr_dir = os.path.join('static', 'qr_codes')
+            os.makedirs(qr_dir, exist_ok=True)
+
+            # ✅ 기존 QR 파일 삭제 (userid로 시작하는 모든 파일)
+            for f in os.listdir(qr_dir):
+                if f.startswith(f"{userid}_") and f.endswith(".png"):
+                    try:
+                        os.remove(os.path.join(qr_dir, f))
+                        print(f"삭제된 이전 QR 파일: {f}")
+                    except Exception as e:
+                        print(f"파일 삭제 오류: {f}, {e}")
+
+            # ✅ 새 QR 생성
+            filename = f"{userid}_{door_id}_{timestamp}.png"
+            filepath = os.path.join(qr_dir, filename)
 
             img = qrcode.make(qr_data)
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
             img.save(filepath)
 
+            # ✅ DB에 현재 QR 정보 저장
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, USERNAME))
+            cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
             conn.commit()
             conn.close()
 
@@ -309,6 +339,15 @@ def upload_palm_data():
     conn.close()
 
     return "손바닥 데이터 업데이트 완료", 200
+
+# ------------------------- 로그아웃 -------------------------
+@app.route('/logout')
+def logout():
+    userid = session.get('user')
+    if userid in qr_generation_users:
+        del qr_generation_users[userid]
+    session.clear()
+    return redirect(url_for('login'))
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
