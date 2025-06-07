@@ -140,7 +140,7 @@ def main():
     userid = session['user']
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT username, phone, email FROM users WHERE userid = %s", (userid,))
+    cursor.execute("SELECT username, userid, doorid, phone, email FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
     conn.close()
 
