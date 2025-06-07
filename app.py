@@ -203,16 +203,40 @@ def check_qr():
     return jsonify({'status': status})
 
 # ------------------------- QR 화면 -------------------------
-@app.route('/qr/<username>')
-def show_qr(username):
-    qr_dir = os.path.join('static', 'qr_codes')
-    filenames = [f for f in os.listdir(qr_dir) if f.startswith(username)]
-    if not filenames:
-        return "QR 코드가 존재하지 않습니다.", 404
-    filename = filenames[0]
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    return render_template('qr.html', username=username, filename=filename, timestamp=timestamp)
 
+@app.route('/qr/<userid>/<doorid>')
+def show_qr(userid, doorid):
+    qr_dir = os.path.join('static', 'qr_codes')
+
+    if not os.path.exists(qr_dir):
+        return "QR 코드 디렉토리가 없습니다.", 500
+
+    # 파일명은: userid_doorid_timestamp.png 형식
+    matched_files = [
+        f for f in os.listdir(qr_dir)
+        if f.startswith(f"{userid}_{doorid}_") and f.endswith('.png')
+    ]
+
+    if not matched_files:
+        return "QR 코드가 존재하지 않습니다.", 404
+
+    # 최신 QR 코드 선택 (timestamp 기준)
+    matched_files.sort(key=lambda f: f.rsplit('_', 1)[-1].replace('.png', ''), reverse=True)
+    filename = matched_files[0]
+
+    # timestamp 추출
+    try:
+        timestamp = filename.rsplit('_', 1)[-1].replace('.png', '')
+    except:
+        timestamp = '알 수 없음'
+
+    return render_template(
+        'qr.html',
+        userid=userid,
+        doorid=doorid,
+        timestamp=timestamp,
+        filename=filename
+    )
 # ------------------------- 로그 -------------------------
 @app.route('/logs')
 def logs():
