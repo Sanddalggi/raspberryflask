@@ -16,9 +16,6 @@ app.config['SECRET_KEY'] = secrets.token_hex(16)
 bcrypt = Bcrypt(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 CORS(app)
-
-qr_generation_users = {}
-
 # ------------------------- DB 연결 함수 -------------------------
 def get_db_connection():
     return mysql.connector.connect(
@@ -52,37 +49,9 @@ def login():
                     # ✅ 세션 등록
                     session['user'] = userid
 
-                    # ✅ QR 자동 생성 대상에 등록
-                    qr_generation_users[userid] = door_id
+                    # ✅ QR 자동 생성 루프 제외: 로그인 시 QR 생성하지 않음
 
-                    # ✅ QR 코드 생성
-                    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-                    qr_data = f"{userid}_{door_id}_{timestamp}"
-                    print("로그인 후 QR 생성:", qr_data)
-
-                    qr_dir = os.path.join('static', 'qr_codes')
-                    os.makedirs(qr_dir, exist_ok=True)
-
-                    # ✅ 기존 QR 파일 삭제
-                    for f in os.listdir(qr_dir):
-                        if f.startswith(f"{userid}_") and f.endswith('.png'):
-                            try:
-                                os.remove(os.path.join(qr_dir, f))
-                                print(f"이전 QR 파일 삭제: {f}")
-                            except Exception as e:
-                                print(f"QR 삭제 오류: {e}")
-
-                    # ✅ 새 QR 저장
-                    filename = f"{userid}_{door_id}_{timestamp}.png"
-                    filepath = os.path.join(qr_dir, filename)
-                    img = qrcode.make(qr_data)
-                    img.save(filepath)
-
-                    # ✅ DB에 저장
-                    cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
-                    conn.commit()
                     conn.close()
-
                     return redirect(url_for('main'))
                 else:
                     conn.close()
@@ -162,43 +131,82 @@ def main():
 
     return render_template('main.html', user=user, username=user['username'])
 
-# ------------------------- QR 생성 루프 -------------------------
-def generate_qr_loop():
-    while True:
-        for userid, door_id in qr_generation_users.items():
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            qr_data = f"{userid}_{door_id}_{timestamp}"
-            print(f"[QR 재생성] {qr_data}")
+# # ------------------------- QR 생성 루프 -------------------------
+# def generate_qr_loop():
+#     while True:
+#         for userid, door_id in qr_generation_users.items():
+#             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+#             qr_data = f"{userid}_{door_id}_{timestamp}"
+#             print(f"[QR 재생성] {qr_data}")
 
-            # 파일 저장 경로
-            qr_dir = os.path.join('static', 'qr_codes')
-            os.makedirs(qr_dir, exist_ok=True)
+#             # 파일 저장 경로
+#             qr_dir = os.path.join('static', 'qr_codes')
+#             os.makedirs(qr_dir, exist_ok=True)
 
-            # ✅ 기존 QR 파일 삭제 (userid로 시작하는 모든 파일)
-            for f in os.listdir(qr_dir):
-                if f.startswith(f"{userid}_") and f.endswith(".png"):
-                    try:
-                        os.remove(os.path.join(qr_dir, f))
-                        print(f"삭제된 이전 QR 파일: {f}")
-                    except Exception as e:
-                        print(f"파일 삭제 오류: {f}, {e}")
+#             # ✅ 기존 QR 파일 삭제 (userid로 시작하는 모든 파일)
+#             for f in os.listdir(qr_dir):
+#                 if f.startswith(f"{userid}_") and f.endswith(".png"):
+#                     try:
+#                         os.remove(os.path.join(qr_dir, f))
+#                         print(f"삭제된 이전 QR 파일: {f}")
+#                     except Exception as e:
+#                         print(f"파일 삭제 오류: {f}, {e}")
 
-            # ✅ 새 QR 생성
-            filename = f"{userid}_{door_id}_{timestamp}.png"
-            filepath = os.path.join(qr_dir, filename)
+#             # ✅ 새 QR 생성
+#             filename = f"{userid}_{door_id}_{timestamp}.png"
+#             filepath = os.path.join(qr_dir, filename)
 
-            img = qrcode.make(qr_data)
-            img.save(filepath)
+#             img = qrcode.make(qr_data)
+#             img.save(filepath)
 
-            # ✅ DB에 현재 QR 정보 저장
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
-            conn.commit()
-            conn.close()
+#             # ✅ DB에 현재 QR 정보 저장
+#             conn = get_db_connection()
+#             cursor = conn.cursor()
+#             cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
+#             conn.commit()
+#             conn.close()
 
-        time.sleep(30)
+#         time.sleep(30)
 
+#------------------------- QR 생성 -------------------------
+@app.route('/generate_qr')
+def generate_qr():
+    userid = request.args.get('userid')
+    if not userid:
+        return jsonify({'status': 'fail', 'reason': 'No userid provided'})
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT doorid FROM users WHERE userid = %s", (userid,))
+    result = cursor.fetchone()
+    if not result:
+        conn.close()
+        return jsonify({'status': 'fail', 'reason': 'User not found'})
+
+    doorid = result[0]
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    qr_data = f"{userid}_{doorid}_{timestamp}"
+    filename = f"{userid}_{doorid}_{timestamp}.png"
+    qr_dir = os.path.join('static', 'qr_codes')
+    os.makedirs(qr_dir, exist_ok=True)
+
+    # 기존 파일 삭제
+    for f in os.listdir(qr_dir):
+        if f.startswith(f"{userid}_") and f.endswith(".png"):
+            try:
+                os.remove(os.path.join(qr_dir, f))
+            except:
+                pass
+
+    filepath = os.path.join(qr_dir, filename)
+    img = qrcode.make(qr_data)
+    img.save(filepath)
+
+    cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'status': 'ok', 'filename': filename})
 # ------------------------- QR 인증 -------------------------
 @app.route('/check_qr', methods=['POST'])
 def check_qr():
@@ -206,10 +214,17 @@ def check_qr():
 
     try:
         username, door_id, timestamp = qr_data.split('_')
+        qr_time = datetime.strptime(timestamp, "%Y%m%d%H%M%S")
     except Exception as e:
         print(f"QR 파싱 오류: {e}")
         socketio.emit('qr_status', {'username': 'unknown', 'status': 'fail'})
         return jsonify({'status': 'fail'})
+
+    # 유효시간 검사 (30초 이내만 허용)
+    now = datetime.now()
+    if (now - qr_time).total_seconds() > 30:
+        socketio.emit('qr_status', {'username': username, 'status': 'expired'})
+        return jsonify({'status': 'expired'})
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -226,59 +241,49 @@ def check_qr():
         elif qr_data == current_qr:
             status = 'success'
         else:
-            status = 'expired'
+            status = 'fail'  # QR 일치하지 않으면 실패로 간주
 
     conn.close()
     socketio.emit('qr_status', {'username': username, 'status': status})
     return jsonify({'status': status})
 
 # ------------------------- QR 화면 -------------------------
-
 @app.route('/qr/<userid>')
 def show_qr(userid):
-    qr_dir = os.path.join('static', 'qr_codes')
-
-    if not os.path.exists(qr_dir):
-        return "QR 코드 디렉토리가 없습니다.", 500
-
-    # userid로 시작하는 파일 찾기
-    matched_files = [
-        f for f in os.listdir(qr_dir)
-        if f.startswith(f"{userid}_") and f.endswith('.png')
-    ]
-
-    if not matched_files:
-        return "QR 코드가 존재하지 않습니다.", 404
-
-    filename = matched_files[0]
-
-    # 도어ID와 timestamp 파싱
-    try:
-        base = filename.replace('.png', '')
-        _, doorid, timestamp = base.split('_')
-    except:
-        doorid = '알 수 없음'
-        timestamp = '알 수 없음'
-
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT username FROM users WHERE userid = %s", (userid,))
+    cursor.execute("SELECT doorid, username FROM users WHERE userid = %s", (userid,))
     result = cursor.fetchone()
     conn.close()
 
-    if result:
-        username = result[0]
-    else:
-        username = userid  # fallback
+    if not result:
+        return "사용자 정보를 찾을 수 없습니다.", 404
 
-    return render_template(
-        'qr.html',
-        username=username,
-        userid=userid,
-        doorid=doorid,
-        timestamp=timestamp,
-        filename=filename
-    )
+    doorid, username = result
+
+    # 기존 파일 삭제
+    qr_dir = os.path.join('static', 'qr_codes')
+    os.makedirs(qr_dir, exist_ok=True)
+    for f in os.listdir(qr_dir):
+        if f.startswith(f"{userid}_") and f.endswith('.png'):
+            os.remove(os.path.join(qr_dir, f))
+
+    # 새 QR 생성
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    qr_data = f"{userid}_{doorid}_{timestamp}"
+    filename = f"{userid}_{doorid}_{timestamp}.png"
+    filepath = os.path.join(qr_dir, filename)
+    img = qrcode.make(qr_data)
+    img.save(filepath)
+
+    # DB 업데이트
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
+    conn.commit()
+    conn.close()
+
+    return render_template('qr.html', username=username, userid=userid, doorid=doorid, timestamp=timestamp, filename=filename)
 # ------------------------- 로그 -------------------------
 @app.route('/logs')
 def logs():
@@ -344,12 +349,9 @@ def upload_palm_data():
 @app.route('/logout')
 def logout():
     userid = session.get('user')
-    if userid in qr_generation_users:
-        del qr_generation_users[userid]
     session.clear()
     return redirect(url_for('login'))
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
-    threading.Thread(target=generate_qr_loop, daemon=True).start()
     socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False)

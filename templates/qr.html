@@ -18,7 +18,6 @@
             margin-right: auto;
             border-radius: 10px;
             font-weight: bold;
-            text-align: center;
             display: none;
         }
 
@@ -31,18 +30,19 @@
             border: 1px solid #ccc;
             border-radius: 10px;
             padding: 10px;
+            margin-bottom: 20px;
         }
 
-        #progress-bar {
+        .progress-container {
             width: 300px;
-            height: 10px;
-            background-color: #e0e0e0;
-            border-radius: 5px;
-            margin: 20px auto;
+            height: 20px;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            margin: 0 auto 20px;
             overflow: hidden;
         }
 
-        #progress {
+        .progress-bar {
             height: 100%;
             width: 100%;
             background-color: #4caf50;
@@ -50,65 +50,38 @@
         }
 
         #refresh-btn {
-            margin-top: 20px;
             padding: 10px 20px;
-            font-size: 16px;
-            border: none;
             background-color: #007bff;
             color: white;
-            border-radius: 5px;
-            cursor: not-allowed;
-            opacity: 0.6;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
         }
 
-        #refresh-btn.enabled {
-            cursor: pointer;
-            opacity: 1.0;
+        #refresh-btn:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
 
     <h1>{{ username }}님의 QR 코드</h1>
-
     <div id="alert" class="alert"></div>
 
-    <img src="{{ url_for('static', filename='qr_codes/' + filename) }}" alt="QR코드">
+    <img id="qr-img" src="{{ url_for('static', filename='qr_codes/' + filename) }}" alt="QR코드">
 
-    <div id="progress-bar"><div id="progress"></div></div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
 
-    <button id="refresh-btn" disabled>🔄 QR 코드 갱신</button>
+    <button id="refresh-btn">QR 갱신</button>
 
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <script>
         const username = "{{ username }}";
+        const userid = "{{ userid }}";
         const socket = io();
-        const duration = 30; // QR 유효 시간 (초)
 
-        const progress = document.getElementById('progress');
-        const refreshBtn = document.getElementById('refresh-btn');
-
-        let remaining = duration;
-
-        const timer = setInterval(() => {
-            remaining -= 1;
-            const percentage = (remaining / duration) * 100;
-            progress.style.width = `${percentage}%`;
-
-            if (remaining <= 0) {
-                clearInterval(timer);
-                refreshBtn.disabled = false;
-                refreshBtn.classList.add('enabled');
-            }
-        }, 1000);
-
-        refreshBtn.addEventListener('click', () => {
-            if (!refreshBtn.disabled) {
-                location.reload();
-            }
-        });
-
-        // 인증 상태 알림
         socket.on('qr_status', (data) => {
             if (data.username !== username) return;
 
@@ -127,8 +100,43 @@
             }
 
             alertBox.style.display = "block";
-            setTimeout(() => { alertBox.style.display = "none"; }, 3000);
+            setTimeout(() => alertBox.style.display = "none", 3000);
         });
+
+        const refreshBtn = document.getElementById("refresh-btn");
+        const qrImg = document.getElementById("qr-img");
+        const progressBar = document.getElementById("progress-bar");
+
+        let timer = null;
+
+        function startProgressBar() {
+            let timeLeft = 30;
+            progressBar.style.width = "100%";
+
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                progressBar.style.width = `${(timeLeft / 30) * 100}%`;
+                if (timeLeft <= 0) clearInterval(timer);
+            }, 1000);
+        }
+
+        function generateQR() {
+            fetch(`/generate_qr?userid=${userid}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "ok") {
+                        qrImg.src = `/static/qr_codes/${data.filename}?t=${Date.now()}`;
+                        startProgressBar();
+                    } else {
+                        alert("QR 생성 실패");
+                    }
+                });
+        }
+
+        // 초기 로드 시 QR 생성
+        window.onload = generateQR;
+        refreshBtn.onclick = generateQR;
     </script>
 </body>
 </html>
