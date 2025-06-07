@@ -76,32 +76,33 @@
             background-color: #007bff;
             transition: width 1s linear;
         }
-        .back-button {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background-color: #f1f1f1;
-            color: #333;
-            padding: 8px 14px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            border: 1px solid #ccc;
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            z-index: 999;
+        .header-with-back {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
-        .back-button:hover {
-            background-color: #ddd;
+        .back-icon {
+            font-size: 24px;
+            text-decoration: none;
+            color: black;
+            position: relative;
+            top: 2px;
+        }
+
+        .back-icon:hover {
+            color: #007bff;
         }
 
     </style>
 </head>
 <body>
-    <a href="{{ url_for('main') }}" class="back-button">&lt; 나가기</a>
-
-    <h1>{{ username }}님의 QR 코드</h1>
-
+    <div class="header-with-back">
+        <a href="{{ url_for('main') }}" class="back-icon">&larr;</a>
+        <h1>{{ username }}님의 <strong>QR</strong> 코드</h1>
+    </div>
     <div id="alert" class="alert"></div>
 
     <div class="qr-container">
