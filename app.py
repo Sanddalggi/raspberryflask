@@ -144,7 +144,7 @@ def main():
     user = cursor.fetchone()
     conn.close()
 
-    return render_template('main.html', user=user)
+    return render_template('main.html', user=user, username=user['username'])
 
 # ------------------------- QR 생성 루프 -------------------------
 def generate_qr_loop():
