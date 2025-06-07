@@ -216,7 +216,7 @@ def check_qr():
         username, door_id, timestamp = qr_data.split('_')
         qr_time = datetime.strptime(timestamp, "%Y%m%d%H%M%S")
     except Exception as e:
-        print(f"QR 파싱 오류: {e}")
+        print(f"QR 파싱 오류: {e}, 입력 데이터: {qr_data}")
         socketio.emit('qr_status', {'username': 'unknown', 'status': 'fail'})
         return jsonify({'status': 'fail'})
 
