@@ -230,8 +230,20 @@ def show_qr(userid):
         doorid = '알 수 없음'
         timestamp = '알 수 없음'
 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT username FROM users WHERE userid = %s", (userid,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        username = result[0]
+    else:
+        username = userid  # fallback
+
     return render_template(
         'qr.html',
+        username=username,
         userid=userid,
         doorid=doorid,
         timestamp=timestamp,
