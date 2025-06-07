@@ -76,20 +76,26 @@
             background-color: #007bff;
             transition: width 1s linear;
         }
-        .header-with-back {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+        .qr-title-container {
+            position: relative;
+            text-align: center;
             margin-bottom: 20px;
         }
 
+        .qr-title {
+            display: inline-block;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
         .back-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
             font-size: 24px;
             text-decoration: none;
             color: black;
-            position: relative;
-            top: 2px;
         }
 
         .back-icon:hover {
@@ -99,10 +105,11 @@
     </style>
 </head>
 <body>
-    <div class="header-with-back">
-        <a href="{{ url_for('main') }}" class="back-icon">&larr;</a>
-        <h1>{{ username }}님의 <strong>QR</strong> 코드</h1>
+    <div class="qr-title-container">
+        <a href="{{ url_for('main') }}" class="back-icon">&lt;</a>
+        <h1 class="qr-title">{{ username }}님의 <strong>QR</strong> 코드</h1>
     </div>
+
     <div id="alert" class="alert"></div>
 
     <div class="qr-container">
