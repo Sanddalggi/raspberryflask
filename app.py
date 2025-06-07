@@ -204,30 +204,30 @@ def check_qr():
 
 # ------------------------- QR 화면 -------------------------
 
-@app.route('/qr/<userid>/<doorid>')
-def show_qr(userid, doorid):
+@app.route('/qr/<userid>')
+def show_qr(userid):
     qr_dir = os.path.join('static', 'qr_codes')
 
     if not os.path.exists(qr_dir):
         return "QR 코드 디렉토리가 없습니다.", 500
 
-    # 파일명은: userid_doorid_timestamp.png 형식
+    # userid로 시작하는 파일 찾기
     matched_files = [
         f for f in os.listdir(qr_dir)
-        if f.startswith(f"{userid}_{doorid}_") and f.endswith('.png')
+        if f.startswith(f"{userid}_") and f.endswith('.png')
     ]
 
     if not matched_files:
         return "QR 코드가 존재하지 않습니다.", 404
 
-    # 최신 QR 코드 선택 (timestamp 기준)
-    matched_files.sort(key=lambda f: f.rsplit('_', 1)[-1].replace('.png', ''), reverse=True)
     filename = matched_files[0]
 
-    # timestamp 추출
+    # 도어ID와 timestamp 파싱
     try:
-        timestamp = filename.rsplit('_', 1)[-1].replace('.png', '')
+        base = filename.replace('.png', '')
+        _, doorid, timestamp = base.split('_')
     except:
+        doorid = '알 수 없음'
         timestamp = '알 수 없음'
 
     return render_template(
