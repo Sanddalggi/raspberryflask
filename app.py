@@ -46,10 +46,10 @@ def login():
             user_id, username, hashed_pw, door_id = user
             if bcrypt.check_password_hash(hashed_pw, password):
                 if door_id:
-                    # ✅ 세션 등록
+                    # 세션 등록
                     session['user'] = userid
 
-                    # ✅ QR 자동 생성 루프 제외: 로그인 시 QR 생성하지 않음
+                    # QR 자동 생성 루프 제외: 로그인 시 QR 생성하지 않음
 
                     conn.close()
                     return redirect(url_for('main'))
