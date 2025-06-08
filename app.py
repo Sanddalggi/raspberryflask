@@ -302,10 +302,10 @@ def register_auth():
 #-------------------------- upload data -------------------------
 @app.route('/upload_biometrics', methods=['POST'])
 def upload_biometrics():
-    userid = session.get('userid')  # 로그인한 사용자 ID
-
-    if not userid:
-        return "로그인이 필요합니다.", 401
+    if "user" not in session:
+        return redirect(url_for('login'))
+    
+    userid = session['user']
 
     face_file = request.files['face_img']
     palm_file = request.files['palm_img']
