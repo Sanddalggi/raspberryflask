@@ -48,20 +48,17 @@ def login():
                 if door_id:
                     # 세션 등록
                     session['user'] = userid
-
-                    # QR 자동 생성 루프 제외: 로그인 시 QR 생성하지 않음
-
                     conn.close()
                     return redirect(url_for('main'))
                 else:
                     conn.close()
-                    return "해당 사용자에게 연결된 도어락이 없습니다."
+                    return render_template('login.html', login_failed="연결된 도어락이 없습니다.")
             else:
                 conn.close()
-                return "아이디 또는 비밀번호가 올바르지 않습니다."
+                return render_template('login.html', login_failed="아이디 또는 비밀번호가 올바르지 않습니다.")
         else:
             conn.close()
-            return "아이디 또는 비밀번호가 올바르지 않습니다."
+            return render_template('login.html', login_failed="아이디 또는 비밀번호가 올바르지 않습니다.")
 
     return render_template('login.html')
 
