@@ -1,41 +1,55 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>인증 데이터 등록</title>
-    <style>
-        body { font-family: sans-serif; padding: 30px; text-align: center; }
-        input[type="file"] {
-            margin: 10px; padding: 8px; width: 300px;
-        }
-        button { padding: 10px 20px; margin-top: 20px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>인증 데이터 등록</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style/style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <h2>얼굴 및 손바닥 데이터 등록</h2>
+  <div class="container mt-5">
 
-    {% if face_exists %}
-        <h3>📸 등록된 얼굴 사진</h3>
-        <img src="{{ face_url }}" alt="얼굴 이미지">
-    {% else %}
-        <p>등록된 얼굴 사진이 없습니다.</p>
-    {% endif %}
+    <!-- 로고 -->
+    <div class="text-center mb-4">
+      <img src="{{ url_for('static', filename='Raspberry_logo_en.jpeg') }}" alt="로고" style="height: 80px;">
+    </div>
 
-    <br><br>
+    <!-- 카드 -->
+    <div class="card mx-auto shadow-sm" style="max-width: 600px;">
+      <div class="card-body text-center">
+        <h4 class="card-title mb-4">인증 데이터 등록</h4>
 
-    {% if palm_exists %}
-        <h3>✋ 등록된 손바닥 사진</h3>
-        <img src="{{ palm_url }}" alt="손바닥 이미지">
-    {% else %}
-        <p>등록된 손바닥 사진이 없습니다.</p>
-    {% endif %}
+        <!-- 등록된 얼굴 사진 -->
+        {% if face_exists %}
+          <h5>📸 등록된 얼굴 사진</h5>
+          <img src="{{ face_url }}" alt="얼굴 이미지" class="img-fluid rounded mb-3" style="max-width: 300px;">
+        {% else %}
+          <p class="text-muted">등록된 얼굴 사진이 없습니다.</p>
+        {% endif %}
 
-    <hr>
-    <h2>얼굴 및 손바닥 데이터 등록</h2>
-    <form action="/upload_biometrics" method="POST" enctype="multipart/form-data">
-        <input type="file" name="face_img" accept="image/*" required><br>
-        <input type="file" name="palm_img" accept="image/*" required><br>
-        <button type="submit">등록하기</button>
-    </form>
+        <!-- 등록된 손바닥 사진 -->
+        {% if palm_exists %}
+          <h5>✋ 등록된 손바닥 사진</h5>
+          <img src="{{ palm_url }}" alt="손바닥 이미지" class="img-fluid rounded mb-3" style="max-width: 300px;">
+        {% else %}
+          <p class="text-muted">등록된 손바닥 사진이 없습니다.</p>
+        {% endif %}
+
+        <hr>
+
+        <!-- 업로드 폼 -->
+        <form action="/upload_biometrics" method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <input type="file" name="face_img" accept="image/*" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <input type="file" name="palm_img" accept="image/*" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">등록하기</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
 </body>
 </html>
