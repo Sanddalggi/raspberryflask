@@ -271,9 +271,26 @@ def logs():
     return render_template('logs.html', logs=log_entries)
 
 # ------------------------- 생체 인식 등록 -------------------------
-@app.route('/register_auth')
+app.route('/register_auth')
 def register_auth():
-    return render_template('register_auth.html')
+    userid = session.get('userid')
+    if not userid:
+        return redirect(url_for('login'))
+
+    face_path = f'static/faces/{userid}_face.jpg'
+    palm_path = f'static/palms/{userid}_palm.jpg'
+
+    face_exists = os.path.exists(face_path)
+    palm_exists = os.path.exists(palm_path)
+
+    return render_template(
+        'register_auth.html',
+        userid=userid,
+        face_exists=face_exists,
+        palm_exists=palm_exists,
+        face_url='/' + face_path if face_exists else None,
+        palm_url='/' + palm_path if palm_exists else None
+    )
 
 #-------------------------- upload data -------------------------
 @app.route('/upload_biometrics', methods=['POST'])
