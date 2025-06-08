@@ -131,43 +131,6 @@ def main():
 
     return render_template('main.html', user=user, username=user['username'])
 
-# # ------------------------- QR 생성 루프 -------------------------
-# def generate_qr_loop():
-#     while True:
-#         for userid, door_id in qr_generation_users.items():
-#             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-#             qr_data = f"{userid}_{door_id}_{timestamp}"
-#             print(f"[QR 재생성] {qr_data}")
-
-#             # 파일 저장 경로
-#             qr_dir = os.path.join('static', 'qr_codes')
-#             os.makedirs(qr_dir, exist_ok=True)
-
-#             # ✅ 기존 QR 파일 삭제 (userid로 시작하는 모든 파일)
-#             for f in os.listdir(qr_dir):
-#                 if f.startswith(f"{userid}_") and f.endswith(".png"):
-#                     try:
-#                         os.remove(os.path.join(qr_dir, f))
-#                         print(f"삭제된 이전 QR 파일: {f}")
-#                     except Exception as e:
-#                         print(f"파일 삭제 오류: {f}, {e}")
-
-#             # ✅ 새 QR 생성
-#             filename = f"{userid}_{door_id}_{timestamp}.png"
-#             filepath = os.path.join(qr_dir, filename)
-
-#             img = qrcode.make(qr_data)
-#             img.save(filepath)
-
-#             # ✅ DB에 현재 QR 정보 저장
-#             conn = get_db_connection()
-#             cursor = conn.cursor()
-#             cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
-#             conn.commit()
-#             conn.close()
-
-#         time.sleep(30)
-
 #------------------------- QR 생성 -------------------------
 @app.route('/generate_qr')
 def generate_qr():
@@ -307,6 +270,28 @@ def logs():
     conn.close()
     return render_template('logs.html', logs=log_entries)
 
+#-------------------------- upload data -------------------------
+@app.route('/upload_biometrics', methods=['POST'])
+def upload_biometrics():
+    userid = session.get('userid')  # 로그인한 사용자 ID
+
+    if not userid:
+        return "로그인이 필요합니다.", 401
+
+    face_file = request.files['face_img']
+    palm_file = request.files['palm_img']
+
+    if face_file and palm_file:
+        face_path = os.path.join('static/faces', f"{userid}_face.jpg")
+        palm_path = os.path.join('static/palms', f"{userid}_palm.jpg")
+
+        face_file.save(face_path)
+        palm_file.save(palm_path)
+
+        return f"{userid}님의 인증 이미지가 저장되었습니다."
+    else:
+        return "업로드 실패: 파일이 누락되었습니다.", 400
+
 # ------------------------- Upload data -------------------------
 @app.route('/upload_face_data', methods=['POST'])
 def upload_face_data():
@@ -351,12 +336,6 @@ def logout():
     userid = session.get('user')
     session.clear()
     return redirect(url_for('login'))
-
-@app.route("/test_emit")
-def test_emit():
-    socketio.emit("qr_status", {"username": "jm1234", "status": "success"})
-    return "Emit sent!"
-
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
