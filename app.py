@@ -292,43 +292,43 @@ def upload_biometrics():
     else:
         return "업로드 실패: 파일이 누락되었습니다.", 400
 
-# ------------------------- Upload data -------------------------
-@app.route('/upload_face_data', methods=['POST'])
-def upload_face_data():
-    data = request.get_json()
-    userid = data.get('userid')
-    features = str(data.get('features'))  # 문자열로 변환
-    timestamp = datetime.now()
+# # ------------------------- Upload data -------------------------
+# @app.route('/upload_face_data', methods=['POST'])
+# def upload_face_data():
+#     data = request.get_json()
+#     userid = data.get('userid')
+#     features = str(data.get('features'))  # 문자열로 변환
+#     timestamp = datetime.now()
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE users SET face_features = %s, face_updated_at = %s WHERE userid = %s",
-        (features, timestamp, userid)
-    )
-    conn.commit()
-    conn.close()
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute(
+#         "UPDATE users SET face_features = %s, face_updated_at = %s WHERE userid = %s",
+#         (features, timestamp, userid)
+#     )
+#     conn.commit()
+#     conn.close()
 
-    return "얼굴 데이터 업데이트 완료", 200
+#     return "얼굴 데이터 업데이트 완료", 200
 
 
-@app.route('/upload_palm_data', methods=['POST'])
-def upload_palm_data():
-    data = request.get_json()
-    userid = data.get('userid')
-    features = str(data.get('features'))
-    timestamp = datetime.now()
+# @app.route('/upload_palm_data', methods=['POST'])
+# def upload_palm_data():
+#     data = request.get_json()
+#     userid = data.get('userid')
+#     features = str(data.get('features'))
+#     timestamp = datetime.now()
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE users SET palm_features = %s, palm_updated_at = %s WHERE userid = %s",
-        (features, timestamp, userid)
-    )
-    conn.commit()
-    conn.close()
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute(
+#         "UPDATE users SET palm_features = %s, palm_updated_at = %s WHERE userid = %s",
+#         (features, timestamp, userid)
+#     )
+#     conn.commit()
+#     conn.close()
 
-    return "손바닥 데이터 업데이트 완료", 200
+#     return "손바닥 데이터 업데이트 완료", 200
 
 # ------------------------- 로그아웃 -------------------------
 @app.route('/logout')
@@ -340,4 +340,3 @@ def logout():
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
     socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False)
-
