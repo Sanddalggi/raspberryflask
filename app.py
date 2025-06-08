@@ -272,7 +272,7 @@ def logs():
 
 # ------------------------- 생체 인식 등록 -------------------------
 @app.route('/register_auth')
-def register_biometrics():
+def register_auth():
     return render_template('register_auth.html')
 
 #-------------------------- upload data -------------------------
