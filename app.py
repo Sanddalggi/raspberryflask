@@ -186,6 +186,7 @@ def check_qr():
     # 유효시간 검사 (30초 이내만 허용)
     now = datetime.now()
     if (now - qr_time).total_seconds() > 30:
+        print(f"⏰ QR 만료됨: {qr_data}")
         socketio.emit('qr_status', {'username': username, 'status': 'expired'})
         return jsonify({'status': 'expired'})
 
@@ -207,6 +208,7 @@ def check_qr():
             status = 'fail'  # QR 일치하지 않으면 실패로 간주
 
     conn.close()
+    print(f"✅ QR 결과: {username} - {status}")  # ←❗ 이 줄이 최종 인증 결과 로그
     socketio.emit('qr_status', {'username': username, 'status': status})
     return jsonify({'status': status})
 
