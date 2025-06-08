@@ -273,9 +273,10 @@ def logs():
 # ------------------------- 생체 인식 등록 -------------------------
 @app.route('/register_auth')
 def register_auth():
-    userid = session.get('userid')
-    if not userid:
+    if "user" not in session:
         return redirect(url_for('login'))
+    
+    userid = session['user']
 
     face_path = f'static/faces/{userid}_face.jpg'
     palm_path = f'static/palms/{userid}_palm.jpg'
