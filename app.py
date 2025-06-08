@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -360,6 +360,11 @@ def upload_biometrics():
 #     return "손바닥 데이터 업데이트 완료", 200
 
 # ------------------------- 마이페이지 -------------------------
+import os
+
+app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 @app.route('/mypage', methods=['GET', 'POST'])
 def mypage():
     if "user" not in session:
@@ -394,6 +399,24 @@ def logout():
     session.clear()  # 세션 초기화
     return redirect(url_for('intro'))
 
+# ------------------------- 이미지 URL -------------------------
+@app.route('/get_latest_image_url')
+
+def get_latest_image_url():
+    userid = request.args.get('userid')
+
+    if not userid:
+        return jsonify({'status': 'fail', 'reason': 'Missing user parameter'}), 400
+
+    image_filename = f"{userid}_face.jpg"
+    image_path = os.path.join('static', 'faces', image_filename)
+
+    if os.path.exists(image_path):
+        # 정적 URL 반환
+        image_url = url_for('static', filename=f'faces/{image_filename}', _external=True)
+        return jsonify({'status': 'ok', 'image_url': image_url})
+    else:
+        return jsonify({'status': 'fail', 'reason': 'Image not found'}), 404
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
