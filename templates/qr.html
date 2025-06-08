@@ -141,19 +141,16 @@
         const socket = io("http://34.64.187.181:5001");
 
         socket.on('qr_status', (data) => {
+            console.log("소켓 메시지 도착:", data);
             if (data.username !== username) return;
 
-            socket.on('qr_status', (data) => {
-                if (data.username !== username) return;
-
-                if (data.status === "success") {
-                    alert("✅ 인증 성공! 문이 열립니다.");
-                } else if (data.status === "fail") {
-                    alert("❌ 인증 실패: 등록되지 않은 QR입니다.");
-                } else if (data.status === "expired") {
-                    alert("⏰ 만료된 QR 코드입니다.");
-                }
-            });
+            if (data.status === "success") {
+                alert("✅ 인증 성공! 문이 열립니다.");
+            } else if (data.status === "fail") {
+                alert("❌ 인증 실패: 등록되지 않은 QR입니다.");
+            } else if (data.status === "expired") {
+                alert("⏰ 만료된 QR 코드입니다.");
+            }
         });
 
         function updateProgress() {
