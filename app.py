@@ -293,6 +293,15 @@ def upload_biometrics():
         face_file.save(face_path)
         palm_file.save(palm_path)
 
+        # conn = get_db_connection()
+        # cursor = conn.cursor()
+        # cursor.execute(
+        #     "UPDATE users SET face_path = %s, palm_path = %s WHERE userid = %s",
+        #     (face_path, palm_path, userid)
+        # )
+        # conn.commit()
+        # conn.close()
+
         return f"{userid}님의 인증 이미지가 저장되었습니다."
     else:
         return "업로드 실패: 파일이 누락되었습니다.", 400
