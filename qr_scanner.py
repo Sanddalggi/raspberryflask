@@ -1,5 +1,5 @@
 import os
-os.environ["DYLD_LIBRARY_PATH"] = "/opt/homebrew/opt/zbar/lib"  # M1/M2 Mac
+#os.environ["DYLD_LIBRARY_PATH"] = "/opt/homebrew/opt/zbar/lib"  # M1/M2 Mac
 
 import cv2
 from pyzbar.pyzbar import decode
