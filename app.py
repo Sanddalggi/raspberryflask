@@ -254,27 +254,30 @@ def logs():
         return redirect(url_for('login'))
 
     userid = session['user']
+    
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT username, face_updated_at, palm_updated_at, motion_updated_at FROM users WHERE userid = %s", (userid,))
+    # 사용자 이름 조회
+    cursor.execute("SELECT username FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
+    if not user:
+        conn.close()
+        return "사용자 정보를 찾을 수 없습니다."
+
+    username = user['username']
+
+    # 최신 인증 로그 조회
+    cursor.execute("""
+        SELECT userid, method, result, timestamp 
+        FROM auth_logs 
+        WHERE userid = %s 
+        ORDER BY timestamp DESC
+    """, (userid,))
+    logs = cursor.fetchall()
     conn.close()
 
-    logs = []
-
-    if user['face_updated_at']:
-        logs.append({"type": "얼굴 인증", "timestamp": user['face_updated_at']})
-    if user['palm_updated_at']:
-        logs.append({"type": "손바닥 인증", "timestamp": user['palm_updated_at']})
-    if user['motion_updated_at']:
-        logs.append({"type": "모션 인증", "timestamp": user['motion_updated_at']})
-
-    # 최신순 정렬
-    logs = sorted(logs, key=lambda x: x['timestamp'], reverse=True)
-
-    return render_template("logs.html", username=user['username'], logs=logs)
-
+    return render_template("logs.html", username=username, logs=logs)
 
 # ------------------------- 생체 인식 등록 -------------------------
 @app.route('/register_auth')
@@ -322,14 +325,14 @@ def upload_biometrics():
         face_file.save(face_path)
         palm_file.save(palm_path)
 
-        # conn = get_db_connection()
-        # cursor = conn.cursor()
-        # cursor.execute(
-        #     "UPDATE users SET face_path = %s, palm_path = %s WHERE userid = %s",
-        #     (face_path, palm_path, userid)
-        # )
-        # conn.commit()
-        # conn.close()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+        "UPDATE users SET face_features = %s, face_updated_at = NOW(), palm_features = %s, palm_updated_at = NOW() WHERE userid = %s",
+        (face_path, palm_path, userid)
+        )
+        conn.commit()
+        conn.close()
 
         return f"{userid}님의 인증 이미지가 저장되었습니다."
     else:

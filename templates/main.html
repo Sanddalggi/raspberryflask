@@ -16,18 +16,35 @@
     </div>
 
     <!-- 카드 -->
-    <div class="card mx-auto shadow-sm" style="max-width: 400px;">
-      <div class="card-body text-center">
-        <h4 class="card-title mb-4">환영합니다, {{ username }}님!</h4>
-
-        <div class="d-grid gap-4">
-          <a href="{{ url_for('mypage') }}" class="btn btn-primary">마이페이지</a>
-          <a href="{{url_for('register_auth')}}" class="btn btn-primary">인증데이터 등록</a>
-          <a href="{{ url_for('logs') }}" class="btn btn-primary">로그 보기</a>
-          <a href="{{ url_for('show_qr', userid=user.userid)}}" class="btn btn-primary">QR 보기</a>
-        </div>
-      </div>
+    <div class="row row-cols-2 g-3 justify-content-center">
+    <div class="col text-center" style="max-width: 140px;">
+      <a href="{{ url_for('mypage') }}" class="btn btn-primary w-100 d-flex align-items-center justify-content-center text-white fw-bold"
+        style="aspect-ratio: 1; font-size: 0.9rem;">
+        마이페이지
+      </a>
     </div>
+    <div class="col text-center" style="max-width: 140px;">
+      <a href="{{ url_for('register_auth') }}" class="btn btn-primary w-100 d-flex align-items-center justify-content-center text-white fw-bold"
+        style="aspect-ratio: 1; font-size: 0.9rem;">
+        인증 등록
+      </a>
+    </div>
+    <div class="col text-center" style="max-width: 140px;">
+      <a href="{{ url_for('logs') }}" class="btn btn-primary w-100 d-flex align-items-center justify-content-center text-white fw-bold"
+        style="aspect-ratio: 1; font-size: 0.9rem;">
+        로그 보기
+      </a>
+    </div>
+    <div class="col text-center" style="max-width: 140px;">
+      <a href="{{ url_for('show_qr', userid=user.userid) }}" class="btn btn-primary w-100 d-flex align-items-center justify-content-center text-white fw-bold"
+        style="aspect-ratio: 1; font-size: 0.9rem;">
+        QR 보기
+      </a>
+    </div>
+  </div>
+
+
+
   </div>
 </body>
 </html>
