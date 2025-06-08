@@ -97,25 +97,6 @@ def register():
 
     return render_template('register.html')
 
-# ------------------------- 인증 방식 선택 -------------------------
-@app.route('/select_auth', methods=["GET"])
-def select_auth():
-    if "user" not in session:
-        return redirect(url_for("login"))
-    return render_template("select_auth.html")
-
-@app.route('/face_auth')
-def face_auth():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    return render_template('face_auth.html')
-
-@app.route('/palm_auth')
-def palm_auth():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    return render_template('palm_auth.html')
-
 # ------------------------- Main -------------------------
 @app.route('/main')
 def main():
