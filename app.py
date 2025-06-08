@@ -131,43 +131,6 @@ def main():
 
     return render_template('main.html', user=user, username=user['username'])
 
-# # ------------------------- QR 생성 루프 -------------------------
-# def generate_qr_loop():
-#     while True:
-#         for userid, door_id in qr_generation_users.items():
-#             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-#             qr_data = f"{userid}_{door_id}_{timestamp}"
-#             print(f"[QR 재생성] {qr_data}")
-
-#             # 파일 저장 경로
-#             qr_dir = os.path.join('static', 'qr_codes')
-#             os.makedirs(qr_dir, exist_ok=True)
-
-#             # ✅ 기존 QR 파일 삭제 (userid로 시작하는 모든 파일)
-#             for f in os.listdir(qr_dir):
-#                 if f.startswith(f"{userid}_") and f.endswith(".png"):
-#                     try:
-#                         os.remove(os.path.join(qr_dir, f))
-#                         print(f"삭제된 이전 QR 파일: {f}")
-#                     except Exception as e:
-#                         print(f"파일 삭제 오류: {f}, {e}")
-
-#             # ✅ 새 QR 생성
-#             filename = f"{userid}_{door_id}_{timestamp}.png"
-#             filepath = os.path.join(qr_dir, filename)
-
-#             img = qrcode.make(qr_data)
-#             img.save(filepath)
-
-#             # ✅ DB에 현재 QR 정보 저장
-#             conn = get_db_connection()
-#             cursor = conn.cursor()
-#             cursor.execute("UPDATE users SET qr_code = %s WHERE userid = %s", (qr_data, userid))
-#             conn.commit()
-#             conn.close()
-
-#         time.sleep(30)
-
 #------------------------- QR 생성 -------------------------
 @app.route('/generate_qr')
 def generate_qr():
@@ -345,12 +308,25 @@ def upload_palm_data():
 
     return "손바닥 데이터 업데이트 완료", 200
 
-# ------------------------- 로그아웃 -------------------------
-@app.route('/logout')
-def logout():
-    userid = session.get('user')
-    session.clear()
-    return redirect(url_for('login'))
+# ------------------------- 마이페이지 -------------------------
+@app.route('/mypage')
+def mypage():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    userid = session['user']
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT username, userid, phone, email, face_features, palm_features FROM users WHERE userid = %s", (userid,))
+    user = cursor.fetchone()
+    conn.close()
+
+    face_status = 'OK' if user['face_features'] else 'X'
+    palm_status = 'OK' if user['palm_features'] else 'X'
+
+    return render_template('mypage.html', user=user, face_status=face_status, palm_status=palm_status)
+
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
