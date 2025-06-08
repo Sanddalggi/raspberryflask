@@ -336,10 +336,9 @@ def upload_biometrics():
         conn.commit()
         conn.close()
 
-        return f"{userid}님의 인증 이미지가 저장되었습니다."
+        return jsonify({"success": True, "message": f"{userid}님의 인증 이미지가 저장되었습니다."})
     else:
-        return "업로드 실패: 파일이 누락되었습니다.", 400
-
+        return jsonify({"success": False, "message": "업로드 실패: 파일이 누락되었습니다."}), 400
 # # ------------------------- Upload data -------------------------
 # @app.route('/upload_face_data', methods=['POST'])
 # def upload_face_data():
