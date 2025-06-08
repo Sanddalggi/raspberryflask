@@ -271,7 +271,7 @@ def logs():
     return render_template('logs.html', logs=log_entries)
 
 # ------------------------- 생체 인식 등록 -------------------------
-app.route('/register_auth')
+@app.route('/register_auth')
 def register_auth():
     userid = session.get('userid')
     if not userid:
