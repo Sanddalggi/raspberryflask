@@ -28,7 +28,7 @@ def get_db_connection():
 # ------------------------- 기본 라우트 -------------------------
 @app.route('/')
 def index():
-    return '기본 라우트의 실행 화면이니 화면이 허전해도 걱정하지마쇼'
+    return render_template('intro.html')
 
 # ------------------------- 로그인 -------------------------
 @app.route('/login', methods=['GET', 'POST'])

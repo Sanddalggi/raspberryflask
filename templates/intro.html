@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Sanddalggi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style/style.css') }}" rel="stylesheet">
+</head>
+<body>
+  <div class="container text-center main-container fade-in">
+    <img src="{{ url_for('static', filename='Raspberry_logo_en.jpeg') }}" alt="로고" height="100" class="mb-4">
+    <h2 class="mb-3">스마트 도어락 시스템</h2>
+    <p class="lead">
+      얼굴 인식, 손바닥 인식, 모션 인식, QR 인증까지 한 번에!<br>
+      편리함과 보안을 동시에 제공하는 지능형 출입 시스템입니다.
+    </p>
+    <ul class="text-start mt-4 mb-4">
+      <li>라즈베리파이 기반의 엣지 컴퓨팅 도어락</li>
+      <li>실시간 얼굴 인식 처리</li>
+      <li>손바닥 및 모션 인식 처리</li>
+      <li>QR 코드 생성 및 만료 자동 관리</li>
+      <li>모바일 웹에서 실시간 출입 로그 확인</li>
+    </ul>
+
+    <!-- 슬라이드 이미지 캐러셀 -->
+    <div id="featureCarousel" class="carousel slide feature-carousel" data-bs-ride="carousel">
+      <div class="carousel-inner">
+        <div class="carousel-item active">
+          <img src="{{ url_for('static', filename='slide1.jpg') }}" class="d-block w-100" alt="기능1">
+        </div>
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='slide2.jpg') }}" class="d-block w-100" alt="기능2">
+        </div>
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#featureCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#featureCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+    </div>
+
+    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg mt-5">로그인 하러 가기</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
