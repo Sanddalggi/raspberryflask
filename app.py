@@ -28,7 +28,7 @@ def get_db_connection():
 # ------------------------- 기본 라우트 -------------------------
 @app.route('/')
 def index():
-    return '기본 라우트의 실행 화면이니 화면이 허전해도 걱정하지마쇼'
+    return render_template('intro.html')
 
 # ------------------------- 로그인 -------------------------
 @app.route('/login', methods=['GET', 'POST'])
@@ -254,21 +254,27 @@ def logs():
         return redirect(url_for('login'))
 
     userid = session['user']
-
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT id FROM users WHERE userid = %s", (userid,))
+    cursor.execute("SELECT username, face_updated_at, palm_updated_at, motion_updated_at FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
-    if not user:
-        return "사용자 정보를 찾을 수 없습니다."
-
-    user_id = user["id"]
-    cursor.execute("SELECT event_type, timestamp FROM logs WHERE userid = %s ORDER BY timestamp DESC", (userid,))
-    log_entries = cursor.fetchall()
-
     conn.close()
-    return render_template('logs.html', logs=log_entries)
+
+    logs = []
+
+    if user['face_updated_at']:
+        logs.append({"type": "얼굴 인증", "timestamp": user['face_updated_at']})
+    if user['palm_updated_at']:
+        logs.append({"type": "손바닥 인증", "timestamp": user['palm_updated_at']})
+    if user['motion_updated_at']:
+        logs.append({"type": "모션 인증", "timestamp": user['motion_updated_at']})
+
+    # 최신순 정렬
+    logs = sorted(logs, key=lambda x: x['timestamp'], reverse=True)
+
+    return render_template("logs.html", username=user['username'], logs=logs)
+
 
 # ------------------------- 생체 인식 등록 -------------------------
 @app.route('/register_auth')
@@ -362,12 +368,33 @@ def upload_biometrics():
 
 #     return "손바닥 데이터 업데이트 완료", 200
 
-# ------------------------- 로그아웃 -------------------------
-@app.route('/logout')
-def logout():
-    userid = session.get('user')
-    session.clear()
-    return redirect(url_for('login'))
+# ------------------------- 마이페이지 -------------------------
+@app.route('/mypage', methods=['GET', 'POST'])
+def mypage():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    userid = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # POST 요청: 인증 방식 설정 처리
+    if request.method == 'POST':
+        selected_method = request.form.get('method')
+        if selected_method in ['face', 'palm']:
+            update_cursor = conn.cursor()
+            update_cursor.execute("UPDATE users SET auth_method = %s WHERE userid = %s", (selected_method, userid))
+            conn.commit()
+
+    # 사용자 정보 가져오기
+    cursor.execute("SELECT username, userid, phone, email, face_features, palm_features, auth_method FROM users WHERE userid = %s", (userid,))
+    user = cursor.fetchone()
+    conn.close()
+
+    face_status = 'OK' if user['face_features'] else 'X'
+    palm_status = 'OK' if user['palm_features'] else 'X'
+
+    return render_template('mypage.html', user=user, face_status=face_status, palm_status=palm_status)
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
