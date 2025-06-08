@@ -144,7 +144,9 @@
         socket.on('qr_status', (data) => {
             if (data.username !== username) return;
 
+            const alertBox = document.getElementById("alert");  
             alertBox.className = "alert";
+
             if (data.status === "success") {
                 alertBox.classList.add("success");
                 alertBox.textContent = "✅ 인증 성공! 문이 열립니다.";
@@ -157,7 +159,10 @@
             }
 
             alertBox.style.display = "block";
-            setTimeout(() => alertBox.style.display = "none", 3000);
+            setTimeout(() => {
+                    alertBox.style.display = "none";
+                    alertBox.className = "alert"; // 클래스 초기화
+                }, 3000);       
         });
 
         function updateProgress() {
