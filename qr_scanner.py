@@ -6,7 +6,7 @@ from pyzbar.pyzbar import decode
 import requests
 import time
 
-SERVER_URL = "http://34.64.187.181:5000/check_qr"
+SERVER_URL = "http://34.64.187.181:5001/check_qr"
 
 def scan_qr_and_send(frame):
     qr_codes = decode(frame)

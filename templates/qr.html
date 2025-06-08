@@ -128,7 +128,6 @@
         const userid = "{{ userid }}";
         const createdTime = new Date("{{ timestamp[:4] }}-{{ timestamp[4:6] }}-{{ timestamp[6:8] }}T{{ timestamp[8:10] }}:{{ timestamp[10:12] }}:{{ timestamp[12:14] }}");
 
-        const alertBox = document.getElementById("alert");
         const refreshBtn = document.getElementById("refreshBtn");
         const qrImage = document.getElementById("qrImage");
         const qrOverlay = document.getElementById("qrOverlay");
@@ -144,25 +143,17 @@
         socket.on('qr_status', (data) => {
             if (data.username !== username) return;
 
-            const alertBox = document.getElementById("alert");  
-            alertBox.className = "alert";
+            socket.on('qr_status', (data) => {
+                if (data.username !== username) return;
 
-            if (data.status === "success") {
-                alertBox.classList.add("success");
-                alertBox.textContent = "✅ 인증 성공! 문이 열립니다.";
-            } else if (data.status === "fail") {
-                alertBox.classList.add("fail");
-                alertBox.textContent = "❌ 인증 실패: 등록되지 않은 QR입니다.";
-            } else if (data.status === "expired") {
-                alertBox.classList.add("expired");
-                alertBox.textContent = "⏰ 만료된 QR 코드입니다.";
-            }
-
-            alertBox.style.display = "block";
-            setTimeout(() => {
-                    alertBox.style.display = "none";
-                    alertBox.className = "alert"; // 클래스 초기화
-                }, 3000);       
+                if (data.status === "success") {
+                    alert("✅ 인증 성공! 문이 열립니다.");
+                } else if (data.status === "fail") {
+                    alert("❌ 인증 실패: 등록되지 않은 QR입니다.");
+                } else if (data.status === "expired") {
+                    alert("⏰ 만료된 QR 코드입니다.");
+                }
+            });
         });
 
         function updateProgress() {
