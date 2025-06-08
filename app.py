@@ -356,11 +356,6 @@ def upload_biometrics():
 #     return "손바닥 데이터 업데이트 완료", 200
 
 # ------------------------- 마이페이지 -------------------------
-import os
-
-app = Flask(__name__)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 @app.route('/mypage', methods=['GET', 'POST'])
 def mypage():
     if "user" not in session:
@@ -396,6 +391,11 @@ def logout():
     return redirect(url_for('intro'))
 
 # ------------------------- 이미지 URL -------------------------
+# import os
+
+# app = Flask(__name__)
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 @app.route('/get_latest_image_url')
 
 def get_latest_image_url():
