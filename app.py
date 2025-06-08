@@ -27,7 +27,7 @@ def get_db_connection():
 
 # ------------------------- 기본 라우트 -------------------------
 @app.route('/')
-def index():
+def intro():
     return render_template('intro.html')
 
 # ------------------------- 로그인 -------------------------
@@ -405,6 +405,14 @@ def mypage():
     palm_status = 'OK' if user['palm_features'] else 'X'
 
     return render_template('mypage.html', user=user, face_status=face_status, palm_status=palm_status)
+
+# ------------------------- 로그 아웃 -------------------------
+
+@app.route('/logout')
+def logout():
+    session.clear()  # 세션 초기화
+    return redirect(url_for('intro'))
+
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
