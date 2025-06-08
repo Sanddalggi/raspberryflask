@@ -270,6 +270,11 @@ def logs():
     conn.close()
     return render_template('logs.html', logs=log_entries)
 
+# ------------------------- 생체 인식 등록 -------------------------
+@app.route('/register_auth')
+def register_biometrics():
+    return render_template('register_auth.html')
+
 #-------------------------- upload data -------------------------
 @app.route('/upload_biometrics', methods=['POST'])
 def upload_biometrics():
