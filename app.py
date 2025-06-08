@@ -179,7 +179,7 @@ def check_qr():
         username, door_id, timestamp = qr_data.split('_')
         qr_time = datetime.strptime(timestamp, "%Y%m%d%H%M%S")
     except Exception as e:
-        print(f"QR 파싱 오류: {e}")
+        print(f"QR 파싱 오류: {e}, 입력 데이터: {qr_data}")
         socketio.emit('qr_status', {'username': 'unknown', 'status': 'fail'})
         return jsonify({'status': 'fail'})
 
@@ -276,43 +276,97 @@ def logs():
     return render_template("logs.html", username=user['username'], logs=logs)
 
 
-# ------------------------- Upload data -------------------------
-@app.route('/upload_face_data', methods=['POST'])
-def upload_face_data():
-    data = request.get_json()
-    userid = data.get('userid')
-    features = str(data.get('features'))  # 문자열로 변환
-    timestamp = datetime.now()
+# ------------------------- 생체 인식 등록 -------------------------
+@app.route('/register_auth')
+def register_auth():
+    if "user" not in session:
+        return redirect(url_for('login'))
+    
+    userid = session['user']
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE users SET face_features = %s, face_updated_at = %s WHERE userid = %s",
-        (features, timestamp, userid)
+    face_path = f'static/faces/{userid}_face.jpg'
+    palm_path = f'static/palms/{userid}_palm.jpg'
+
+    face_exists = os.path.exists(face_path)
+    palm_exists = os.path.exists(palm_path)
+
+    return render_template(
+        'register_auth.html',
+        userid=userid,
+        face_exists=face_exists,
+        palm_exists=palm_exists,
+        face_url='/' + face_path if face_exists else None,
+        palm_url='/' + palm_path if palm_exists else None
     )
-    conn.commit()
-    conn.close()
 
-    return "얼굴 데이터 업데이트 완료", 200
+#-------------------------- upload data -------------------------
+@app.route('/upload_biometrics', methods=['POST'])
+def upload_biometrics():
+    userid = session.get('userid')  # 로그인한 사용자 ID
+
+    if not userid:
+        return "로그인이 필요합니다.", 401
+
+    face_file = request.files['face_img']
+    palm_file = request.files['palm_img']
+
+    if face_file and palm_file:
+        face_path = os.path.join('static/faces', f"{userid}_face.jpg")
+        palm_path = os.path.join('static/palms', f"{userid}_palm.jpg")
+
+        face_file.save(face_path)
+        palm_file.save(palm_path)
+
+        # conn = get_db_connection()
+        # cursor = conn.cursor()
+        # cursor.execute(
+        #     "UPDATE users SET face_path = %s, palm_path = %s WHERE userid = %s",
+        #     (face_path, palm_path, userid)
+        # )
+        # conn.commit()
+        # conn.close()
+
+        return f"{userid}님의 인증 이미지가 저장되었습니다."
+    else:
+        return "업로드 실패: 파일이 누락되었습니다.", 400
+
+# # ------------------------- Upload data -------------------------
+# @app.route('/upload_face_data', methods=['POST'])
+# def upload_face_data():
+#     data = request.get_json()
+#     userid = data.get('userid')
+#     features = str(data.get('features'))  # 문자열로 변환
+#     timestamp = datetime.now()
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute(
+#         "UPDATE users SET face_features = %s, face_updated_at = %s WHERE userid = %s",
+#         (features, timestamp, userid)
+#     )
+#     conn.commit()
+#     conn.close()
+
+#     return "얼굴 데이터 업데이트 완료", 200
 
 
-@app.route('/upload_palm_data', methods=['POST'])
-def upload_palm_data():
-    data = request.get_json()
-    userid = data.get('userid')
-    features = str(data.get('features'))
-    timestamp = datetime.now()
+# @app.route('/upload_palm_data', methods=['POST'])
+# def upload_palm_data():
+#     data = request.get_json()
+#     userid = data.get('userid')
+#     features = str(data.get('features'))
+#     timestamp = datetime.now()
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE users SET palm_features = %s, palm_updated_at = %s WHERE userid = %s",
-        (features, timestamp, userid)
-    )
-    conn.commit()
-    conn.close()
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute(
+#         "UPDATE users SET palm_features = %s, palm_updated_at = %s WHERE userid = %s",
+#         (features, timestamp, userid)
+#     )
+#     conn.commit()
+#     conn.close()
 
-    return "손바닥 데이터 업데이트 완료", 200
+#     return "손바닥 데이터 업데이트 완료", 200
 
 # ------------------------- 마이페이지 -------------------------
 @app.route('/mypage', methods=['GET', 'POST'])

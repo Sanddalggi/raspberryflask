@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>인증 데이터 등록</title>
+    <style>
+        body { font-family: sans-serif; padding: 30px; text-align: center; }
+        input[type="file"] {
+            margin: 10px; padding: 8px; width: 300px;
+        }
+        button { padding: 10px 20px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2>얼굴 및 손바닥 데이터 등록</h2>
+
+    {% if face_exists %}
+        <h3>📸 등록된 얼굴 사진</h3>
+        <img src="{{ face_url }}" alt="얼굴 이미지">
+    {% else %}
+        <p>등록된 얼굴 사진이 없습니다.</p>
+    {% endif %}
+
+    <br><br>
+
+    {% if palm_exists %}
+        <h3>✋ 등록된 손바닥 사진</h3>
+        <img src="{{ palm_url }}" alt="손바닥 이미지">
+    {% else %}
+        <p>등록된 손바닥 사진이 없습니다.</p>
+    {% endif %}
+
+    <hr>
+    <h2>얼굴 및 손바닥 데이터 등록</h2>
+    <form action="/upload_biometrics" method="POST" enctype="multipart/form-data">
+        <input type="file" name="face_img" accept="image/*" required><br>
+        <input type="file" name="palm_img" accept="image/*" required><br>
+        <button type="submit">등록하기</button>
+    </form>
+</body>
+</html>
