@@ -38,15 +38,19 @@
         <hr>
 
         <!-- 업로드 폼 -->
+        <!-- 업로드 폼 -->
         <form action="/upload_biometrics" method="POST" enctype="multipart/form-data">
-          <div class="mb-3">
-            <input type="file" name="face_img" accept="image/*" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <input type="file" name="palm_img" accept="image/*" class="form-control" required>
-          </div>
-          <button type="submit" class="btn btn-primary">등록하기</button>
+            <div class="mb-3 text-start">
+                <label for="face_img" class="form-label">📸 얼굴 이미지 업로드</label>
+                <input type="file" id="face_img" name="face_img" accept="image/*" class="form-control" required>
+            </div>
+            <div class="mb-3 text-start">
+                <label for="palm_img" class="form-label">✋ 손바닥 이미지 업로드</label>
+                <input type="file" id="palm_img" name="palm_img" accept="image/*" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">등록하기</button>
         </form>
+
       </div>
     </div>
 
