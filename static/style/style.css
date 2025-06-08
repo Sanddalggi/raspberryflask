@@ -49,3 +49,7 @@ body {
       max-height: 300px;
       object-fit: cover;
     }
+.log-card {
+      max-width: 600px;
+      margin: 40px auto;
+    }

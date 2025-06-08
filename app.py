@@ -254,21 +254,27 @@ def logs():
         return redirect(url_for('login'))
 
     userid = session['user']
-
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT id FROM users WHERE userid = %s", (userid,))
+    cursor.execute("SELECT username, face_updated_at, palm_updated_at, motion_updated_at FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
-    if not user:
-        return "사용자 정보를 찾을 수 없습니다."
-
-    user_id = user["id"]
-    cursor.execute("SELECT event_type, timestamp FROM logs WHERE userid = %s ORDER BY timestamp DESC", (userid,))
-    log_entries = cursor.fetchall()
-
     conn.close()
-    return render_template('logs.html', logs=log_entries)
+
+    logs = []
+
+    if user['face_updated_at']:
+        logs.append({"type": "얼굴 인증", "timestamp": user['face_updated_at']})
+    if user['palm_updated_at']:
+        logs.append({"type": "손바닥 인증", "timestamp": user['palm_updated_at']})
+    if user['motion_updated_at']:
+        logs.append({"type": "모션 인증", "timestamp": user['motion_updated_at']})
+
+    # 최신순 정렬
+    logs = sorted(logs, key=lambda x: x['timestamp'], reverse=True)
+
+    return render_template("logs.html", username=user['username'], logs=logs)
+
 
 # ------------------------- Upload data -------------------------
 @app.route('/upload_face_data', methods=['POST'])
