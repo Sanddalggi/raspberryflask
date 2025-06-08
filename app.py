@@ -315,16 +315,25 @@ def upload_palm_data():
     return "손바닥 데이터 업데이트 완료", 200
 
 # ------------------------- 마이페이지 -------------------------
-@app.route('/mypage')
+@app.route('/mypage', methods=['GET', 'POST'])
 def mypage():
     if "user" not in session:
         return redirect(url_for("login"))
 
     userid = session['user']
-
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT username, userid, phone, email, face_features, palm_features FROM users WHERE userid = %s", (userid,))
+
+    # POST 요청: 인증 방식 설정 처리
+    if request.method == 'POST':
+        selected_method = request.form.get('method')
+        if selected_method in ['face', 'palm']:
+            update_cursor = conn.cursor()
+            update_cursor.execute("UPDATE users SET auth_method = %s WHERE userid = %s", (selected_method, userid))
+            conn.commit()
+
+    # 사용자 정보 가져오기
+    cursor.execute("SELECT username, userid, phone, email, face_features, palm_features, auth_method FROM users WHERE userid = %s", (userid,))
     user = cursor.fetchone()
     conn.close()
 
@@ -332,7 +341,6 @@ def mypage():
     palm_status = 'OK' if user['palm_features'] else 'X'
 
     return render_template('mypage.html', user=user, face_status=face_status, palm_status=palm_status)
-
 
 # ------------------------- 서버 실행 -------------------------
 if __name__ == '__main__':
