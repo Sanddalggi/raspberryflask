@@ -139,7 +139,7 @@
         let timer = null;
 
         // ✨ GCP 서버 주소 명시적으로 지정
-        const socket = io("http://34.64.187.181:5000");
+        const socket = io("http://34.64.187.181:5001");
 
         socket.on('qr_status', (data) => {
             if (data.username !== username) return;
