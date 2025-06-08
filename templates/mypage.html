@@ -15,7 +15,7 @@
       font-weight: bold;
     }
     .card {
-      max-width: 600px;
+      max-width: 350px;
       margin: 50px auto;
     }
   </style>
@@ -26,6 +26,7 @@
       <div class="card-body">
         <h4 class="card-title mb-4 text-center">마이페이지</h4>
 
+        <!-- 사용자 정보 -->
         <ul class="list-group list-group-flush">
           <li class="list-group-item"><strong>아이디:</strong> {{ user.userid }}</li>
           <li class="list-group-item"><strong>이름:</strong> {{ user.username }}</li>
@@ -35,7 +36,8 @@
 
         <hr class="my-4">
 
-        <h5 class="mb-3">인증 등록 상태</h5>
+        <!-- 등록 여부 -->
+        <h5 class="mb-3 text-center">인증 등록 상태</h5>
         <ul class="list-group">
           <li class="list-group-item">
             얼굴 인증:
@@ -47,6 +49,25 @@
           </li>
         </ul>
 
+        <!-- 인증 방식 설정 -->
+        <hr class="my-4">
+        <h5 class="mb-3 text-center">인증 방식 설정</h5>
+        <div class="d-flex justify-content-around">
+          <form method="POST">
+            <input type="hidden" name="method" value="face">
+            <button type="submit" class="btn {% if user.auth_method == 'face' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+              얼굴 인증 사용
+            </button>
+          </form>
+          <form method="POST">
+            <input type="hidden" name="method" value="palm">
+            <button type="submit" class="btn {% if user.auth_method == 'palm' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+              손바닥 인증 사용
+            </button>
+          </form>
+        </div>
+
+        <!-- 뒤로가기 -->
         <div class="text-center mt-4">
           <a href="{{ url_for('main') }}" class="btn btn-secondary">← 뒤로가기</a>
         </div>
