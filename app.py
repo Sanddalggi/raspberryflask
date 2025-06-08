@@ -311,6 +311,11 @@ def upload_biometrics():
     palm_file = request.files['palm_img']
 
     if face_file and palm_file:
+        face_dir = os.path.join('static', 'faces')
+        palm_dir = os.path.join('static', 'palms')
+        os.makedirs(face_dir, exist_ok=True)
+        os.makedirs(palm_dir, exist_ok=True)
+
         face_path = os.path.join('static/faces', f"{userid}_face.jpg")
         palm_path = os.path.join('static/palms', f"{userid}_palm.jpg")
 
