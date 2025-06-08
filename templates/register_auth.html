@@ -39,22 +39,50 @@
         <hr>
 
         <!-- 업로드 폼 -->
-        <!-- 업로드 폼 -->
-        <form action="/upload_biometrics" method="POST" enctype="multipart/form-data">
-            <div class="mb-3 text-start">
-                <label for="face_img" class="form-label">📸 얼굴 이미지 업로드</label>
-                <input type="file" id="face_img" name="face_img" accept="image/*" class="form-control" required>
-            </div>
-            <div class="mb-3 text-start">
-                <label for="palm_img" class="form-label">✋ 손바닥 이미지 업로드</label>
-                <input type="file" id="palm_img" name="palm_img" accept="image/*" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary">등록하기</button>
+        <form id="biometricForm" enctype="multipart/form-data">
+          <div class="mb-3 text-start">
+              <label for="face_img" class="form-label">📸 얼굴 이미지 업로드</label>
+              <input type="file" id="face_img" name="face_img" accept="image/*" class="form-control" required>
+          </div>
+          <div class="mb-3 text-start">
+              <label for="palm_img" class="form-label">✋ 손바닥 이미지 업로드</label>
+              <input type="file" id="palm_img" name="palm_img" accept="image/*" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">등록하기</button>
         </form>
 
       </div>
     </div>
 
   </div>
+
+  <script>
+    document.getElementById('biometricForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch('/upload_biometrics', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert(result.message);
+          location.reload();
+        } else {
+          alert("❗️" + result.message);
+        }
+
+      } catch (error) {
+        alert("서버 오류가 발생했습니다.");
+        console.error(error);
+      }
+    });
+  </script>
+
 </body>
 </html>
