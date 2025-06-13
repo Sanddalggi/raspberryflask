@@ -226,7 +226,7 @@ def show_qr(userid):
     conn.commit()
     conn.close()
 
-    return render_template('qr.html', username=session[username], userid=session[userid], doorid=doorid, timestamp=timestamp, filename=filename)
+    return render_template('qr.html', username=username, userid=userid, doorid=doorid, timestamp=timestamp, filename=filename)
 # ------------------------- 로그 -------------------------
 @app.route('/logs')
 def logs():
