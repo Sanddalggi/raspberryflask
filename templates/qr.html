@@ -142,8 +142,8 @@
 
         socket.on('qr_status', (data) => {
             console.log("소켓 메시지 도착:", data);
-            if (data.username !== userid) {
-                console.warn("잘못된 사용자:", data.username);
+            if (data.userid !== userid) {
+                console.warn("잘못된 사용자:", data.userid);
                 return;
             }
             

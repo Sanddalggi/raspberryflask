@@ -154,7 +154,7 @@ def check_qr():
     qr_data = request.form.get('qr_data', '')
 
     try:
-        username, door_id, timestamp = qr_data.split('_')
+        userid, door_id, timestamp = qr_data.split('_')
         qr_time = datetime.strptime(timestamp, "%Y%m%d%H%M%S")
     except Exception as e:
         print(f"QR 파싱 오류: {e}, 입력 데이터: {qr_data}")
@@ -165,12 +165,12 @@ def check_qr():
     now = datetime.now()
     if (now - qr_time).total_seconds() > 30:
         print(f"⏰ QR 만료됨: {qr_data}")
-        socketio.emit('qr_status', {'username': username, 'status': 'expired'})
+        socketio.emit('qr_status', {'userid': userid, 'status': 'expired'})
         return jsonify({'status': 'expired'})
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT doorid, qr_code FROM users WHERE userid = %s", (username,))
+    cursor.execute("SELECT doorid, qr_code FROM users WHERE userid = %s", (userid,))
     result = cursor.fetchone()
 
     if not result:
@@ -186,8 +186,8 @@ def check_qr():
             status = 'fail'  # QR 일치하지 않으면 실패로 간주
 
     conn.close()
-    print(f"✅ QR 결과: {username} - {status}")  # ←❗ 이 줄이 최종 인증 결과 로그
-    socketio.emit('qr_status', {'username': username, 'status': status})
+    print(f"✅ QR 결과: {userid} - {status}")  # ←❗ 이 줄이 최종 인증 결과 로그
+    socketio.emit('qr_status', {'userid': userid, 'status': status})
     return jsonify({'status': status})
 
 # ------------------------- QR 화면 -------------------------
