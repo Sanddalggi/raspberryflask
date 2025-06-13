@@ -143,8 +143,11 @@
 
         socket.on('qr_status', (data) => {
             console.log("소켓 메시지 도착:", data);
-            if (data.username !== username) return;
-
+            if (data.userid !== userid) {
+                console.warn("잘못된 사용자:", data.userid);
+                return;
+            }
+            
             if (data.status === "success") {
                 alert("✅ 인증 성공! 문이 열립니다.");
             } else if (data.status === "fail") {
