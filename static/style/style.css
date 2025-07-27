@@ -1,0 +1,55 @@
+:root {
+    --main-color: #bc1142;
+}
+html, body{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #FFFFFF !important; /* !important는 bootstrap의 bg-light 설정을 덮기위함 */
+}
+.btn-primary {
+    background-color: var(--main-color);
+    border-color: var(--main-color);
+    font-size: 1.2rem;
+    transition: all 0.3s ease-in-out;
+}
+.btn-primary:hover {
+    background-color: #a01038;
+    border-color: #a01038;
+}
+.form-control:focus {
+    border-color: var(--main-color);
+    box-shadow: 0 0 0 0.2rem rgba(188, 17, 66, 0.25);
+}
+
+body {
+      background: linear-gradient(135deg, #fff, #fff);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .main-container {
+      max-width: 700px;
+      margin-top: 80px;
+      background: white;
+      padding: 40px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    .fade-in {
+      animation: fadeIn 1.2s ease-in-out both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .feature-carousel {
+      margin-top: 30px;
+    }
+    .carousel-item img {
+      border-radius: 12px;
+      max-height: 300px;
+      object-fit: cover;
+    }
+.log-card {
+      max-width: 600px;
+      margin: 40px auto;
+    }

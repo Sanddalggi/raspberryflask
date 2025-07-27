@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>인증 데이터 등록</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style/style.css') }}" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-5">
+
+    <!-- 로고 -->
+    <div class="text-center mb-4">
+      <img src="{{ url_for('static', filename='Raspberry_logo_en.jpeg') }}" alt="로고" style="height: 80px;">
+    </div>
+
+    <!-- 카드 -->
+    <div class="card mx-auto shadow-sm" style="max-width: 600px;">
+      <div class="card-body text-center">
+        <h4 class="card-title mb-4">인증 데이터 등록</h4>
+
+        <!-- 등록된 얼굴 사진 -->
+        {% if face_exists %}
+          <h5>📸 등록된 얼굴 사진</h5>
+          <img src="{{ face_url }}" alt="얼굴 이미지" class="img-fluid rounded mb-3" style="max-width: 300px;">
+        {% else %}
+          <p class="text-muted">등록된 얼굴 사진이 없습니다.</p>
+        {% endif %}
+
+        <!-- 등록된 손바닥 사진 -->
+        {% if palm_exists %}
+          <h5>✋ 등록된 손바닥 사진</h5>
+          <img src="{{ palm_url }}" alt="손바닥 이미지" class="img-fluid rounded mb-3" style="max-width: 300px;">
+        {% else %}
+          <p class="text-muted">등록된 손바닥 사진이 없습니다.</p>
+        {% endif %}
+
+        <hr>
+
+        <!-- 업로드 폼 -->
+        <form id="biometricForm" enctype="multipart/form-data">
+          <div class="mb-3 text-start">
+              <label for="face_img" class="form-label">📸 얼굴 이미지 업로드</label>
+              <input type="file" id="face_img" name="face_img" accept="image/*" class="form-control" required>
+          </div>
+          <div class="mb-3 text-start">
+              <label for="palm_img" class="form-label">✋ 손바닥 이미지 업로드</label>
+              <input type="file" id="palm_img" name="palm_img" accept="image/*" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">등록하기</button>
+          <!-- 돌아가기 버튼 -->
+            <div class="mt-4">
+              <a href="{{ url_for('main') }}" class="btn btn-outline-secondary">돌아가기</a>
+            </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    document.getElementById('biometricForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch('/upload_biometrics', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert(result.message);
+          location.reload();
+        } else {
+          alert("❗️" + result.message);
+        }
+
+      } catch (error) {
+        alert("서버 오류가 발생했습니다.");
+        console.error(error);
+      }
+    });
+  </script>
+
+</body>
+</html>
