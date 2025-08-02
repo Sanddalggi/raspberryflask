@@ -1,2 +1,6 @@
 Flask
 flask-cors
+flask-socketio
+Flask-Bcrypt
+mysql-connector-python
+qrcode
