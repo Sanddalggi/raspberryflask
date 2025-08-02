@@ -6,6 +6,59 @@
   <title>Sanddalggi Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="{{ url_for('static', filename='style/style.css') }}" rel="stylesheet">
+  <style>
+    /* 버튼 기본 스타일 */
+    .btn-primary {
+      background-color: #b8143d;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      transition: all 0.25s ease-in-out;
+      box-shadow: 0 4px 10px rgba(184,20,61,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    /* 호버 시 */
+    .btn-primary:hover {
+      background-color: #d81e4c;
+      box-shadow: 0 6px 18px rgba(184,20,61,0.35);
+      transform: translateY(-4px) scale(1.05);
+    }
+    /* 클릭 시 */
+    .btn-primary:active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 3px 8px rgba(184,20,61,0.2);
+    }
+    /* 반짝임 효과 */
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -75%;
+      width: 50%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: skewX(-25deg);
+    }
+    .btn-primary.flash::after {
+      animation: shine 0.6s ease forwards;
+    }
+    @keyframes shine {
+      0% { left: -75%; }
+      100% { left: 125%; }
+    }
+
+    /* 로그아웃 버튼 */
+    .btn-secondary {
+      background-color: #6c757d;
+      border-radius: 8px;
+      border: none;
+      transition: background-color 0.2s ease-in-out;
+    }
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+  </style>
 </head>
 <body>
   <div class="container mt-5">
@@ -44,12 +97,23 @@
     </div>
 
   </div>
-    <!-- 우측 하단 고정 로그아웃 버튼 -->
+
+  <!-- 우측 하단 고정 로그아웃 버튼 -->
   <a href="{{ url_for('logout') }}"
     class="btn btn-secondary btn-sm"
     style="position: fixed; bottom: 20px; right: 20px; z-index: 999;">
     로그아웃
   </a>
 
+  <script>
+    // 클릭 시 반짝임 효과
+    document.querySelectorAll('.btn-primary').forEach(btn => {
+      btn.addEventListener('click', function() {
+        btn.classList.remove('flash');
+        void btn.offsetWidth; // 애니메이션 재시작을 위한 강제 리플로우
+        btn.classList.add('flash');
+      });
+    });
+  </script>
 </body>
 </html>
