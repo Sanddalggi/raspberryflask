@@ -15,5 +15,3 @@
 4. git add .
 5. git commit -m "커밋 내용"
 6. git push origin (브랜치 이름)
-
-외부 IP : 34.64.187.181
