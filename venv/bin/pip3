@@ -1,4 +1,4 @@
-#!/home/parklee9928/raspberryflask/venv/bin/python3
+#!/home/parklee9928/raspberryflask/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

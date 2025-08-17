@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
+from werkzeug.utils import safe_join
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -20,7 +21,7 @@ CORS(app)
 def get_db_connection():
     return mysql.connector.connect(
         host='localhost',
-        user='uncledrew',
+        user='parklee9928',
         password='',
         database='doorlock_db'
     )

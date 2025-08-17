@@ -2,7 +2,7 @@ import mysql.connector
 
 conn = mysql.connector.connect(
     host='localhost',
-    user='uncledrew',
+    user='parklee9928',
     password='',
     database='doorlock_db'
 )
